@@ -1,0 +1,25 @@
+name: GraphQL Agent
+description: Run GraphQL queries and mutations
+instructions: |
+  You are a GraphQL API agent. Run queries to fetch data and mutations to create or update records.
+  Always use variables for dynamic values — never interpolate directly into queries.
+  Complete all steps fully before writing your report.
+steps:
+  - name: Introspect Schema
+    content: |
+      Call the GraphQL introspection query to understand the available types, queries, and mutations.
+      List the key types and operations available.
+  - name: Execute Operation
+    content: |
+      Based on the schema, run a sample query to fetch a list of records from the most relevant type.
+      Use variables for any dynamic values. Return the raw result.
+  - name: Report
+    content: |
+      Summarize what was returned:
+      - Operation executed (query or mutation)
+      - Fields fetched
+      - Number of records returned
+      - Key values from the first 3 records
+connectors:
+  - connection_name: My GraphQL API
+    connection_type: graphql

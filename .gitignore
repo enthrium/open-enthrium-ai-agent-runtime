@@ -1,0 +1,9 @@
+node_modules/
+server/cli/bundle/
+server/cli/oe-runtime-win.exe
+server/cli/oe-runtime-linux
+server/cli/oe-runtime-macos
+server/cli/sea-prep.blob
+server/storage/
+.env
+*.log

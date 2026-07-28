@@ -1,0 +1,114 @@
+name: Release OE Runtime
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      - name: Build Windows runtime
+        working-directory: server
+        run: yarn build:win
+
+      - name: Upload oe-runtime-win.exe
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: server/cli/oe-runtime-win.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      - name: Build Linux runtime
+        working-directory: server
+        run: yarn build:linux
+
+      - name: Generate Postman collection from samples
+        working-directory: server
+        run: yarn generate:postman
+
+      - name: Zip sample library
+        run: cd server/cli && zip -r oe-runtime-samples.zip samples/
+
+      - name: Upload Linux binaries and starter files
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            server/cli/oe-runtime-linux
+            server/cli/oe-runtime.postman_collection.json
+            server/cli/oe-runtime-samples.zip
+
+  build-macos:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      - name: Build macOS runtime
+        working-directory: server
+        run: yarn build:macos
+
+      - name: Upload oe-runtime-macos
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: server/cli/oe-runtime-macos
+
+  update-website:
+    if: github.repository == 'openenterprise-info/open-enterprise-ai-runtime'
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-linux, build-macos]
+    steps:
+      - name: Clone website repo
+        run: git clone https://x-access-token:${{ secrets.WEBSITE_PAT }}@github.com/openenterprise-info/open-enterprise-website.git website
+
+      - name: Update version in runtime.html
+        run: |
+          VERSION="${{ github.ref_name }}"
+          cd website
+          sed -i -E "s/v[0-9]+\.[0-9]+\.[0-9]+/${VERSION}/g" runtime.html
+
+      - name: Commit and push
+        run: |
+          VERSION="${{ github.ref_name }}"
+          cd website
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add runtime.html
+          git diff --cached --quiet || git commit -m "chore: update OE Runtime download links to ${VERSION}"
+          git push

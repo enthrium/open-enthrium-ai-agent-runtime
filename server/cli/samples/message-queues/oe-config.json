@@ -1,0 +1,21 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret-api-key"
+  },
+  "connectors": [
+    {
+      "connection_name": "My Kafka",
+      "connection_type": "kafka",
+      "brokers": ["localhost:9092"],
+      "clientId": "oe-runtime",
+      "topic": "my-topic"
+    }
+  ]
+}

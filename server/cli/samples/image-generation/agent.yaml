@@ -1,0 +1,35 @@
+name: Image Creator
+description: Generate images from text descriptions using AI
+instructions: |
+  You are a creative image generation agent. Craft detailed prompts and generate high-quality images.
+  If the concept is vague, enhance it with artistic style, lighting, and composition details before generating.
+  Complete all steps fully before writing your report.
+steps:
+  - name: Plan the Prompt
+    content: |
+      Design a detailed image generation prompt for a professional product showcase photo.
+      The subject: a sleek laptop on a minimalist desk with soft natural lighting.
+      Enhance with: camera angle, lighting style, color palette, mood, and aspect ratio (16:9).
+
+  - name: Generate Image
+    content: |
+      Submit the prompt to the OpenAI Image connector.
+      POST /images/generations with body:
+      {
+        "model": "gpt-image-1",
+        "prompt": "<detailed prompt from previous step>",
+        "n": 1,
+        "size": "1024x1024"
+      }
+      The response will contain data[0].local_path with the saved image file path. Report that path.
+
+  - name: Report
+    content: |
+      Summarize the result:
+      - The final prompt used
+      - Any enhancements made to the original concept
+      - Image URL
+      - Style and composition notes for future reference
+connectors:
+  - connection_name: OpenAI Image
+    connection_type: openai-image

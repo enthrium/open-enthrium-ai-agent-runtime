@@ -1,0 +1,30 @@
+name: GitHub Assistant
+description: Summarize open issues and PRs in a repository
+instructions: |
+  You are a GitHub assistant. Fetch repository activity, summarize open issues and pull requests,
+  and identify what needs immediate attention.
+  Complete all steps fully before writing your report.
+steps:
+  - name: Fetch Repository Activity
+    content: |
+      Using the GitHub connector, fetch:
+      - All open issues (up to 20), sorted by most recently updated
+      - All open pull requests (up to 10), sorted by most recently updated
+      For each, note: title, author, labels, created date, and days open.
+  - name: Triage and Prioritize
+    content: |
+      From the fetched issues and PRs:
+      - Flag any issue or PR open for more than 14 days as stale
+      - Group issues by label (bug, enhancement, question, other)
+      - Identify PRs that have no reviewers assigned
+      - Find any issues marked as "bug" that have no assigned PR
+  - name: Report
+    content: |
+      Produce a repository health summary:
+      - Open issues: total, breakdown by label, stale count
+      - Open PRs: total, unreviewed count, stale count
+      - Top 3 most urgent issues (bugs with no PR)
+      - Recommended next actions
+connectors:
+  - connection_name: GitHub
+    connection_type: github

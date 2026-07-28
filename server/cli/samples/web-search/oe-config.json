@@ -1,0 +1,20 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret-api-key"
+  },
+  "connectors": [
+    {
+      "connection_name": "Perplexity",
+      "connection_type": "perplexity-search",
+      "bearerToken": "YOUR_PERPLEXITY_API_KEY",
+      "baseUrl": "https://api.perplexity.ai"
+    }
+  ]
+}

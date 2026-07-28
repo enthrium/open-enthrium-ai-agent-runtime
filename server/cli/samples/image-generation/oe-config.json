@@ -1,0 +1,21 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret-api-key"
+  },
+  "connectors": [
+    {
+      "connection_name": "OpenAI Image",
+      "connection_type": "openai-image",
+      "bearerToken": "YOUR_OPENAI_API_KEY",
+      "baseUrl": "https://api.openai.com/v1",
+      "model": "gpt-image-1"
+    }
+  ]
+}

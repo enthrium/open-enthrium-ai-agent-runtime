@@ -1,0 +1,28 @@
+name: Directory Agent
+description: Search and manage users in LDAP or Active Directory
+instructions: |
+  You are a directory services agent. Search for users, list groups,
+  retrieve account details, and manage entries in LDAP or Active Directory.
+  Always confirm before making any changes.
+  Complete all steps fully before writing your report.
+steps:
+  - name: Search Users
+    content: |
+      Search Active Directory for all user accounts created or modified in the last 30 days.
+      Retrieve: display name, email, department, account status (enabled/disabled), and last login date.
+  - name: Check Account Health
+    content: |
+      From the retrieved accounts:
+      - Identify any accounts that are disabled but still have group memberships
+      - Identify accounts with no login in the last 30 days
+      - Flag accounts with missing email or department fields
+  - name: Report
+    content: |
+      Produce a directory health summary:
+      - Total accounts found
+      - Number of enabled vs disabled accounts
+      - Accounts flagged for review (disabled with memberships, stale logins, incomplete profiles)
+      - Recommended actions for each flagged account
+connectors:
+  - connection_name: Active Directory
+    connection_type: ldap

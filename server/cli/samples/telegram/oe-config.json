@@ -1,0 +1,19 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret-api-key"
+  },
+  "connectors": [
+    {
+      "connection_name": "My Telegram Bot",
+      "connection_type": "telegram",
+      "baseUrl": "https://api.telegram.org/botYOUR_BOT_TOKEN"
+    }
+  ]
+}

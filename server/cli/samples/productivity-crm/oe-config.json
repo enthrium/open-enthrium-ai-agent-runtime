@@ -1,0 +1,21 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret-api-key"
+  },
+  "connectors": [
+    {
+      "connection_name": "GitHub",
+      "connection_type": "github",
+      "token": "ghp_YOUR_GITHUB_PERSONAL_ACCESS_TOKEN",
+      "owner": "your-org",
+      "repo": "your-repo"
+    }
+  ]
+}

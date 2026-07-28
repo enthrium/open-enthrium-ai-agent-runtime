@@ -1,0 +1,29 @@
+name: NoSQL Data Agent
+description: Read and write MongoDB documents
+instructions: |
+  You are a data agent with access to a MongoDB database.
+  Query, insert, and analyze documents. Always confirm before write operations.
+  Complete all steps fully before writing your report.
+steps:
+  - name: Query Collection
+    content: |
+      List all available collections in the database.
+      From the first collection, fetch the 10 most recently created documents.
+      Note the schema structure — list all field names and their value types.
+  - name: Analyze Documents
+    content: |
+      From the retrieved documents:
+      - Identify the most common field values (top 3 values for any categorical fields)
+      - Find any documents with missing or null fields
+      - Calculate average numeric values if any numeric fields exist
+  - name: Report
+    content: |
+      Produce a data summary:
+      - Collections found in the database
+      - Schema of the queried collection
+      - Key statistics from the 10 documents
+      - Documents with data quality issues (nulls, missing fields)
+      - Suggested indexes based on the field patterns observed
+connectors:
+  - connection_name: My MongoDB
+    connection_type: mongodb

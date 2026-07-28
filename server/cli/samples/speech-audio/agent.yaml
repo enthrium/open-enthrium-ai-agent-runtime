@@ -1,0 +1,42 @@
+name: Text to Speech Agent
+description: Convert text to natural-sounding speech audio
+instructions: |
+  You are a speech synthesis agent. Convert provided text to audio using ElevenLabs.
+  Choose a clear, professional voice appropriate for the content type.
+  Complete all steps fully before writing your report.
+steps:
+  - name: Prepare Content
+    content: |
+      Prepare the following text for speech synthesis. Clean it for audio delivery —
+      expand abbreviations and confirm it reads well aloud:
+
+      "Welcome to Open Enterprise. Your AI automation platform is ready. You can now
+      build, deploy, and run intelligent agents that connect to any tool or service.
+      Let's get started."
+
+  - name: Select Voice
+    content: |
+      GET /voices to retrieve the list of available ElevenLabs voices.
+      Select a professional, clear voice suitable for corporate narration.
+      Save the voice_id of the selected voice.
+
+  - name: Generate Audio
+    content: |
+      POST /text-to-speech/<voice_id> with body:
+      {
+        "text": "<prepared text from step 1>",
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": { "stability": 0.7, "similarity_boost": 0.8 }
+      }
+      The response is an audio file saved to a local temp path. Report that path.
+
+  - name: Report
+    content: |
+      Summarize the result:
+      - Text converted (character count)
+      - Voice selected (name and voice_id)
+      - Voice settings used (stability, similarity_boost)
+      - Output audio file path
+connectors:
+  - connection_name: ElevenLabs
+    connection_type: elevenlabs

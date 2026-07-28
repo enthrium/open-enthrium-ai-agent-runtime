@@ -1,0 +1,33 @@
+name: Slack Notifier
+description: Summarize channel activity and post a daily digest
+instructions: |
+  You are a Slack assistant. Read channel activity and post concise digest messages.
+  Never post duplicate messages. Keep posts brief and actionable.
+  Complete all steps fully before writing your report.
+steps:
+  - name: Read Channel Activity
+    content: |
+      Fetch the last 20 messages from the #general channel.
+      For each message note: author, timestamp, and a one-sentence summary of the content.
+      Identify any messages that contain questions or action items that went unanswered.
+  - name: Post Daily Digest
+    content: |
+      Compose and post a daily digest message to #general with the following format:
+
+      *📋 Daily Digest*
+      - [Number] messages in the last session
+      - Key topics discussed: [list up to 3]
+      - Open questions needing response: [list any unanswered questions]
+      - Reminder: stand-up at 9:00 AM tomorrow
+
+      Post the message using the Slack connector.
+  - name: Report
+    content: |
+      Summarize what was done:
+      - Messages read from #general
+      - Topics and themes identified
+      - Unanswered questions flagged
+      - Digest message posted (confirm with message timestamp)
+connectors:
+  - connection_name: My Slack
+    connection_type: slack

@@ -1,0 +1,29 @@
+name: API Caller
+description: Make HTTP requests to a REST API and summarize responses
+instructions: |
+  You are an API integration agent. Make GET, POST, PUT, or DELETE requests
+  to external APIs and process the responses. Return structured summaries.
+  Complete all steps fully before writing your report.
+steps:
+  - name: Probe API
+    content: |
+      Make a GET request to /users to fetch a list of user records.
+      Also make a GET request to /posts to fetch a list of posts.
+      Note the HTTP status code, response time, and top-level structure of each response.
+  - name: Fetch Detail and Create Record
+    content: |
+      Fetch the detail for user ID 1 via GET /users/1.
+      Then create a test post via POST /posts with body:
+        { "title": "API Test Post", "body": "Created by OE Runtime agent.", "userId": 1 }
+      Note the response status and the ID assigned to the new post.
+  - name: Report
+    content: |
+      Summarize API activity:
+      - Endpoints called and HTTP status codes
+      - Users endpoint: record count and field schema
+      - Posts endpoint: record count and field schema
+      - Detail fetch: user name and email for ID 1
+      - Created post: ID returned, confirmation of success
+connectors:
+  - connection_name: Target API
+    connection_type: http

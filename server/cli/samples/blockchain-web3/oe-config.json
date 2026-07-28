@@ -1,0 +1,21 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret-api-key"
+  },
+  "connectors": [
+    {
+      "connection_name": "Ethereum",
+      "connection_type": "web3",
+      "provider": "infura",
+      "apiKey": "YOUR_INFURA_PROJECT_ID",
+      "network": "mainnet"
+    }
+  ]
+}

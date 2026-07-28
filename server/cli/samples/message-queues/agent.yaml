@@ -1,0 +1,26 @@
+name: Queue Publisher
+description: Publish messages to Kafka topics and verify delivery
+instructions: |
+  You are a message queue agent. Publish events to Kafka topics and confirm delivery.
+  Format all payloads as JSON. Include event_type, timestamp, and payload in every message.
+  Complete all steps fully before writing your report.
+steps:
+  - name: Check Topic Status
+    content: |
+      List the available Kafka topics and their partition counts.
+      Check the consumer group lag for the main topic to see if messages are being consumed.
+  - name: Publish Test Events
+    content: |
+      Publish 3 test events to the main topic with the following structure:
+        { "event_type": "system.health_check", "timestamp": "<current ISO timestamp>", "payload": { "status": "ok", "sequence": <1, 2, 3> } }
+      Publish them one at a time and confirm each delivery with the returned offset.
+  - name: Report
+    content: |
+      Summarize queue activity:
+      - Topics found and their partition counts
+      - Consumer group lag before publishing
+      - Events published (topic, offset, timestamp for each)
+      - Delivery confirmation status
+connectors:
+  - connection_name: My Kafka
+    connection_type: kafka

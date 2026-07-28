@@ -1,0 +1,33 @@
+name: Email Assistant
+description: Summarize inbox and send a follow-up email
+instructions: |
+  You are an email assistant. Read the inbox via IMAP and send emails via SMTP.
+  Draft professional, concise messages. Never send without confirming recipient and subject.
+  Complete all steps fully before writing your report.
+steps:
+  - name: Read Inbox
+    content: |
+      Call the Gmail connector:
+      GET /messages with params: { "labelIds": "UNREAD", "maxResults": "10" }
+      Then for each message id returned, call:
+      GET /messages/<id> with params: { "format": "metadata", "metadataHeaders": "From,Subject,Date" }
+      Collect sender, subject, date, and snippet for each email.
+
+  - name: Draft and Send Reply
+    content: |
+      From the unread emails, identify the one that most urgently needs a reply.
+      Draft a professional acknowledgement reply. Then send it by calling:
+      POST /messages/send
+      with body: { "raw": "<base64url-encoded RFC 2822 message>" }
+      Construct the raw field as: base64url("From: me\r\nTo: <sender>\r\nSubject: Re: <subject>\r\n\r\n<body>")
+
+  - name: Report
+    content: |
+      Summarize what was done:
+      - Number of unread emails found
+      - Brief summary of each email (sender, subject, urgency level)
+      - Which email was replied to and why
+      - Confirm the reply was sent successfully
+connectors:
+  - connection_name: My Email
+    connection_type: gmail-rest

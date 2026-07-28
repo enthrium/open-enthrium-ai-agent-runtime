@@ -1,0 +1,23 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret-api-key"
+  },
+  "connectors": [
+    {
+      "connection_name": "MQTT Broker",
+      "connection_type": "mqtt",
+      "broker": "mqtt://localhost:1883",
+      "clientId": "oe-runtime",
+      "topic": "devices/#",
+      "username": "YOUR_MQTT_USER",
+      "password": "YOUR_MQTT_PASSWORD"
+    }
+  ]
+}

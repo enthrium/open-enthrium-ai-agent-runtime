@@ -1,0 +1,20 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret-api-key"
+  },
+  "connectors": [
+    {
+      "connection_name": "My Google Drive",
+      "connection_type": "google-drive",
+      "bearerToken": "YOUR_GOOGLE_ACCESS_TOKEN",
+      "baseUrl": "https://www.googleapis.com/drive/v3"
+    }
+  ]
+}

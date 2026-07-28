@@ -1,0 +1,21 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret-api-key"
+  },
+  "connectors": [
+    {
+      "connection_name": "ElevenLabs",
+      "connection_type": "elevenlabs",
+      "apiKey": "YOUR_ELEVENLABS_API_KEY",
+      "headerName": "xi-api-key",
+      "baseUrl": "https://api.elevenlabs.io/v1"
+    }
+  ]
+}

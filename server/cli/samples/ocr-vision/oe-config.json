@@ -1,0 +1,21 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret-api-key"
+  },
+  "connectors": [
+    {
+      "connection_name": "Azure Vision",
+      "connection_type": "azure-vision",
+      "apiKey": "YOUR_AZURE_VISION_KEY",
+      "headerName": "Ocp-Apim-Subscription-Key",
+      "baseUrl": "https://YOUR_RESOURCE.cognitiveservices.azure.com/vision/v3.2"
+    }
+  ]
+}
