@@ -1,7 +1,7 @@
 <div align="center">
 
-<h1>OE Agent Runtime</h1>
-<h3>Standalone AI Agent Executor · Apache-2.0 · Windows · Linux · macOS</h3>
+<h1>Open Enterprise AI Agent Runtime</h1>
+<h3>aka OE Runtime · Standalone AI Agent Executor · Apache-2.0 · Windows · Linux · macOS</h3>
 
 **Run AI agents against any enterprise data source — no cloud, no platform, just a single binary.**
 
