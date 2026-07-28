@@ -221,7 +221,20 @@ curl -X POST http://localhost:3333/run \
 | **ERP** | SAP, Oracle ERP, Microsoft Dynamics |
 | **+ more** | Healthcare (FHIR), Marketing, Analytics, Finance, HR, E-commerce, ... |
 
-> **Note:** Oracle (`oracledb`), MSSQL (`mssql`), SQLite (`better-sqlite3`), and Snowflake (`snowflake-sdk`) require native modules and work in Node.js mode (`node server/cli/index.js`). All other connectors work in the standalone binary.
+> **Binary vs Node.js mode**
+>
+> The standalone binary works for all connector categories **except** Oracle, MSSQL, SQLite, and Snowflake — these use native C++ addons that cannot be bundled into a single executable.
+>
+> If you need any of these four, run with Node.js instead:
+> ```bash
+> git clone https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime.git
+> cd open-enterprise-ai-agent-runtime/server
+> yarn install
+> node cli/index.js agent.yaml --config oe-config.json
+> # or serve mode
+> node cli/index.js --serve --config oe-config.json
+> ```
+> All other connectors (PostgreSQL, MySQL, MongoDB, Redis, S3, Slack, GitHub, REST API, SSH, etc.) work directly with the binary — no Node.js required.
 
 ---
 
