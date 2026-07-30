@@ -259,7 +259,7 @@ OE Agent Runtime is the open-source standalone execution layer of the [Open Ente
 
 | | |
 |---|---|
-| 🖥️ **Platform (Docker)** | [open-enterprise-community](https://github.com/openenterprise-info/open-enterprise-community) — full web app with workspaces, RAG, Agent Builder, DLP |
+| 🖥️ **Platform (Docker)** | [open-enterprise-community](https://github.com/openenterprise-info/open-enterprise-ai-platform) — full web app with workspaces, RAG, Agent Builder, DLP |
 | 🔌 **MCP Server** | [open-enterprise-ai-mcp-server](https://github.com/openenterprise-info/open-enterprise-ai-mcp-server) — connect Claude Code, Cursor, Windsurf to enterprise data |
 | 🌐 **Website** | [openenterprise.info](https://openenterprise.info) |
 
