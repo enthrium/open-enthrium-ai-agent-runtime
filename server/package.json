@@ -1,4 +1,4 @@
-﻿{
+
     "name":  "@open-enterprise/server",
     "version":  "1.4.6",
     "main":  "src/index.js",
