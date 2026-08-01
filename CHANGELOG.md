@@ -20,7 +20,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Automated website version bumps** — `runtime.html` download link versions update automatically on release tag
 
 ### Changed
-- Source of truth moved to monorepo (`open-enterprise-commercial`); one tag fans out to all repos
+- Source of truth moved to monorepo (`enthrium-commercial`); one tag fans out to all repos
 - `README.md`, `CONTRIBUTING.md`, `LICENSE`, `SECURITY.md`, `CHANGELOG.md` managed from monorepo
 
 ---
@@ -28,7 +28,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [v1.4.1] — 2026-07-28
 
 ### Changed
-- Dedicated public repo `open-enterprise-ai-agent-runtime` established with own CI pipeline building all three platform binaries
+- Dedicated public repo `open-enthrium-ai-agent-runtime` established with own CI pipeline building all three platform binaries
 
 ---
 

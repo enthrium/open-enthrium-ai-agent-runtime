@@ -1,16 +1,16 @@
 <div align="center">
 
-<h1>Open Enterprise AI Agent Runtime</h1>
+<h1>Open Enthrium AI Agent Runtime</h1>
 <h3>aka OE Runtime · Standalone AI Agent Executor · Apache-2.0 · Windows · Linux · macOS</h3>
 
 **Run AI agents against any enterprise data source — no cloud, no platform, just a single binary.**
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-4f46e5.svg)](LICENSE)
-[![GitHub Release](https://img.shields.io/github/v/release/openenterprise-info/open-enterprise-ai-agent-runtime?color=4f46e5&label=latest)](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases)
-[![Windows](https://img.shields.io/badge/Windows-Download-0078D4?logo=windows&logoColor=white)](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases/latest/download/oe-runtime-win.exe)
-[![Linux](https://img.shields.io/badge/Linux-Download-E95420?logo=linux&logoColor=white)](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases/latest/download/oe-runtime-linux)
-[![macOS](https://img.shields.io/badge/macOS-Download-000000?logo=apple&logoColor=white)](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases/latest/download/oe-runtime-macos)
-[![Website](https://img.shields.io/badge/Website-openenterprise.info-4f46e5)](https://www.openenterprise.info)
+[![GitHub Release](https://img.shields.io/github/v/release/enthrium/open-enthrium-ai-agent-runtime?color=4f46e5&label=latest)](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases)
+[![Windows](https://img.shields.io/badge/Windows-Download-0078D4?logo=windows&logoColor=white)](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-win.exe)
+[![Linux](https://img.shields.io/badge/Linux-Download-E95420?logo=linux&logoColor=white)](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-linux)
+[![macOS](https://img.shields.io/badge/macOS-Download-000000?logo=apple&logoColor=white)](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-macos)
+[![Website](https://img.shields.io/badge/Website-openenthrium.com-4f46e5)](https://www.openenthrium.com)
 [![Discord](https://img.shields.io/badge/Discord-Community-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/vWsZ24Msn)
 
 </div>
@@ -33,11 +33,11 @@ OE Agent Runtime is a standalone, cross-platform binary that reads a declarative
 
 | Platform | Binary |
 |---|---|
-| **Windows** | [oe-runtime-win.exe](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases/latest/download/oe-runtime-win.exe) |
-| **Linux** | [oe-runtime-linux](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases/latest/download/oe-runtime-linux) |
-| **macOS** | [oe-runtime-macos](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases/latest/download/oe-runtime-macos) |
-| **Sample library** | [oe-runtime-samples.zip](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) — 20 ready-to-run starter kits |
-| **Postman collection** | [oe-runtime.postman_collection.json](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases/latest/download/oe-runtime.postman_collection.json) |
+| **Windows** | [oe-runtime-win.exe](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-win.exe) |
+| **Linux** | [oe-runtime-linux](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-linux) |
+| **macOS** | [oe-runtime-macos](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-macos) |
+| **Sample library** | [oe-runtime-samples.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) — 20 ready-to-run starter kits |
+| **Postman collection** | [oe-runtime.postman_collection.json](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime.postman_collection.json) |
 
 > Binaries are built automatically via GitHub Actions on every version tag across all three platforms simultaneously.
 
@@ -52,7 +52,7 @@ OE Agent Runtime is a standalone, cross-platform binary that reads a declarative
 chmod +x oe-runtime-linux
 
 # Download a sample kit (includes agent.yaml + oe-config.json)
-# https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip
+# https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip
 ```
 
 **2. Edit `oe-config.json`** with your LLM key and connector credentials
@@ -228,8 +228,8 @@ curl -X POST http://localhost:3333/run \
 >
 > If you need any of these four, run with Node.js instead:
 > ```bash
-> git clone https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime.git
-> cd open-enterprise-ai-agent-runtime/server
+> git clone https://github.com/enthrium/open-enthrium-ai-agent-runtime.git
+> cd open-enthrium-ai-agent-runtime/server
 > yarn install
 > node cli/index.js agent.yaml --config oe-config.json
 > # or serve mode
@@ -241,7 +241,7 @@ curl -X POST http://localhost:3333/run \
 
 ## Sample Library
 
-Download [oe-runtime-samples.zip](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) for 20 ready-to-run starter kits — each with a complete `agent.yaml` + `oe-config.json`:
+Download [oe-runtime-samples.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) for 20 ready-to-run starter kits — each with a complete `agent.yaml` + `oe-config.json`:
 
 `sql-databases` · `nosql-cache` · `file-storage` · `cloud-drives` · `email` · `team-messaging` · `productivity-crm` · `rest-api` · `graphql` · `ssh` · `message-queues` · `iot-messaging` · `web-search` · `ocr-vision` · `image-generation` · `speech-audio` · `video-generation` · `music-generation` · `blockchain-web3` · `directory-identity`
 
@@ -253,15 +253,15 @@ Download [oe-runtime-samples.zip](https://github.com/openenterprise-info/open-en
 
 ---
 
-## Part of Open Enterprise
+## Part of Open Enthrium
 
-OE Agent Runtime is the open-source standalone execution layer of the [Open Enterprise](https://openenterprise.info) platform.
+OE Agent Runtime is the open-source standalone execution layer of the [Open Enthrium](https://openenthrium.com) platform.
 
 | | |
 |---|---|
-| 🖥️ **Platform (Docker)** | [open-enterprise-community](https://github.com/openenterprise-info/open-enterprise-ai-platform) — full web app with workspaces, RAG, Agent Builder, DLP |
-| 🔌 **MCP Server** | [open-enterprise-ai-mcp-server](https://github.com/openenterprise-info/open-enterprise-ai-mcp-server) — connect Claude Code, Cursor, Windsurf to enterprise data |
-| 🌐 **Website** | [openenterprise.info](https://openenterprise.info) |
+| 🖥️ **Platform (Docker)** | [open-enthrium-community](https://github.com/enthrium/open-enthrium-ai-platform) — full web app with workspaces, RAG, Agent Builder, DLP |
+| 🔌 **MCP Server** | [open-enthrium-ai-mcp-server](https://github.com/enthrium/open-enthrium-ai-mcp-server) — connect Claude Code, Cursor, Windsurf to enterprise data |
+| 🌐 **Website** | [openenthrium.com](https://openenthrium.com) |
 
 ---
 
@@ -274,6 +274,6 @@ No usage limits. No telemetry. No call-home.
 
 <div align="center">
 
-**[⭐ Star this repo](https://github.com/openenterprise-info/open-enterprise-ai-agent-runtime)** &nbsp;·&nbsp; **[🌐 Website](https://www.openenterprise.info)** &nbsp;·&nbsp; **[🔌 MCP Server](https://github.com/openenterprise-info/open-enterprise-ai-mcp-server)**
+**[⭐ Star this repo](https://github.com/enthrium/open-enthrium-ai-agent-runtime)** &nbsp;·&nbsp; **[🌐 Website](https://www.openenthrium.com)** &nbsp;·&nbsp; **[🔌 MCP Server](https://github.com/enthrium/open-enthrium-ai-mcp-server)**
 
 </div>

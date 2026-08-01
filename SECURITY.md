@@ -6,7 +6,7 @@
 
 If you discover a security issue, please email us directly:
 
-**support@openenterprise.info**
+**support@openenthrium.com**
 
 Include:
 - A description of the vulnerability
@@ -34,4 +34,4 @@ Out of scope:
 
 ## Supported Versions
 
-Only the latest release of Open Enterprise Community is actively maintained for security fixes.
+Only the latest release of Open Enthrium Community is actively maintained for security fixes.

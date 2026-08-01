@@ -1,4 +1,4 @@
-# Contributing to Open Enterprise AI Agent Runtime
+# Contributing to Open Enthrium AI Agent Runtime
 
 Thank you for your interest in contributing. This document covers the repo structure, what belongs here vs the platform repo, and how to submit a contribution.
 
@@ -14,18 +14,18 @@ This repo contains the **standalone runtime binary** — the CLI entry point, HT
 
 | Contribution | Where it goes |
 |---|---|
-| New connector adapter (e.g. Salesforce, SAP) | [open-enterprise-community](https://github.com/openenterprise-info/open-enterprise-community) → `server/src/utils/tools/adapters/` |
+| New connector adapter (e.g. Salesforce, SAP) | [open-enthrium-ai-platform](https://github.com/enthrium/open-enthrium-ai-platform) → `server/src/utils/tools/adapters/` |
 | New sample agent (`agent.yaml` + `oe-config.json`) | **This repo** → `server/cli/samples/<name>/` |
 | Bug in CLI entry point or HTTP server mode | **This repo** → `server/cli/` |
-| Bug in agent execution engine | [open-enterprise-community](https://github.com/openenterprise-info/open-enterprise-community) → `server/src/engine/` |
-| MCP server binary or MCP samples | [open-enterprise-ai-mcp-server](https://github.com/openenterprise-info/open-enterprise-ai-mcp-server) |
+| Bug in agent execution engine | [open-enthrium-ai-platform](https://github.com/enthrium/open-enthrium-ai-platform) → `server/src/engine/` |
+| MCP server binary or MCP samples | [open-enthrium-ai-mcp-server](https://github.com/enthrium/open-enthrium-ai-mcp-server) |
 
 ---
 
 ## Repo Structure
 
 ```
-open-enterprise-ai-agent-runtime/
+open-enthrium-ai-agent-runtime/
 ├── server/
 │   ├── cli/
 │   │   ├── index.js          # oe-runtime CLI entry point
@@ -34,7 +34,7 @@ open-enterprise-ai-agent-runtime/
 │   │       └── <name>/
 │   │           ├── agent.yaml
 │   │           └── oe-config.json
-│   ├── src/                  # Shared adapter source (synced from community)
+│   ├── src/                  # Shared adapter source (synced from platform repo)
 │   │   └── utils/tools/
 │   │       ├── registry.js
 │   │       └── adapters/
