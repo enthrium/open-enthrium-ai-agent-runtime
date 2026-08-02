@@ -1,4 +1,4 @@
-﻿{
+{
     "name": "@open-enthrium/server",
     "version":  "1.5.2",
     "main":  "src/index.js",
