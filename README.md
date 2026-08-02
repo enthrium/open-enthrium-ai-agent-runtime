@@ -190,6 +190,24 @@ curl -X POST http://localhost:3333/run \
 
 ---
 
+## Binary vs Node.js Mode
+
+The standalone binary works for all connector categories **except** Oracle, MSSQL, SQLite, and Snowflake — these use native C++ addons that cannot be bundled into a single executable.
+
+If you need any of these four, run with Node.js instead:
+```bash
+git clone https://github.com/enthrium/open-enthrium-ai-agent-runtime.git
+cd open-enthrium-ai-agent-runtime/server
+yarn install
+node cli/index.js agent.yaml --config oe-config.json
+# or serve mode
+node cli/index.js --serve --config oe-config.json
+```
+
+All other connectors (PostgreSQL, MySQL, MongoDB, Redis, S3, Slack, GitHub, REST API, SSH, etc.) work directly with the binary — no Node.js required.
+
+---
+
 ## Connector Catalog
 
 **2,600+ connectors across 45+ categories** — built in, no custom code required.
@@ -221,21 +239,6 @@ curl -X POST http://localhost:3333/run \
 | **Helpdesk** | Zendesk, Freshdesk, Intercom |
 | **ERP** | SAP, Oracle ERP, Microsoft Dynamics |
 | **+ more** | Healthcare (FHIR), Marketing, Analytics, Finance, HR, E-commerce, ... |
-
-> **Binary vs Node.js mode**
->
-> The standalone binary works for all connector categories **except** Oracle, MSSQL, SQLite, and Snowflake — these use native C++ addons that cannot be bundled into a single executable.
->
-> If you need any of these four, run with Node.js instead:
-> ```bash
-> git clone https://github.com/enthrium/open-enthrium-ai-agent-runtime.git
-> cd open-enthrium-ai-agent-runtime/server
-> yarn install
-> node cli/index.js agent.yaml --config oe-config.json
-> # or serve mode
-> node cli/index.js --serve --config oe-config.json
-> ```
-> All other connectors (PostgreSQL, MySQL, MongoDB, Redis, S3, Slack, GitHub, REST API, SSH, etc.) work directly with the binary — no Node.js required.
 
 ---
 
