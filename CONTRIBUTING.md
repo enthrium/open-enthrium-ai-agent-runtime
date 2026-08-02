@@ -4,7 +4,7 @@ Thank you for your interest in contributing. This document covers the repo struc
 
 ## Before You Start
 
-Open an issue first before writing code. PRs without prior discussion may be closed even if the code is good.
+Open an issue first before writing code. This lets us align on whether the change fits the project direction before you invest time building it. PRs that arrive without a prior discussion may be closed even if the code is good.
 
 ---
 
@@ -84,9 +84,10 @@ The binary is output to `server/cli/dist/`.
 ## How to Submit a PR
 
 1. Fork the repo and create a branch from `main`
-2. Name your branch: `feat/salesforce-sample`, `fix/serve-port-flag`, `docs/quickstart`
+2. Name your branch descriptively: `feat/salesforce-sample`, `fix/serve-port-flag`, `docs/quickstart`
 3. Keep PRs focused — one fix or feature per PR
-4. All PRs require at least one approval before merging
+4. Fill in the PR template completely
+5. All PRs require at least one approval from a maintainer before merging
 
 ---
 
@@ -95,15 +96,26 @@ The binary is output to `server/cli/dist/`.
 - Match the style of the surrounding code
 - No commented-out code
 - No `console.log` left in production paths
+- If you add a new dependency, explain why an existing one couldn't work
 
 ---
 
 ## Reporting Bugs
 
-Include: what you did, what you expected, what happened, your OS and binary version.
+Use the Bug Report issue template. Include:
+- What you did
+- What you expected
+- What actually happened
+- Your environment (OS, binary version, LLM provider)
 
 ---
 
 ## Security Issues
 
 Do **not** open a public issue for security vulnerabilities. See [SECURITY.md](SECURITY.md).
+
+---
+
+## Questions
+
+Open a GitHub Discussion rather than an issue if you have a question about how something works or whether an idea is worth pursuing.
