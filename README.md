@@ -31,7 +31,7 @@ Open Enthrium AI Agent Runtime aka OE Runtime is a standalone, cross-platform bi
 
 ## Quick Start
 
-**1. Download the binary and a starter kit**
+**1. Download the binary and a sample kit**
 
 | Platform | Binary |
 |---|---|
@@ -92,25 +92,6 @@ oe-runtime-win.exe agent.yaml --config oe-config.json
 
 ---
 
-## Binary vs Node.js Mode
-
-The standalone binary works for all connector categories **except Oracle, MSSQL, SQLite, and Snowflake** — these use native C++ addons that cannot be bundled into a single executable.
-
-If you need any of these four, run with Node.js instead:
-
-```bash
-git clone https://github.com/enthrium/open-enthrium-ai-agent-runtime.git
-cd open-enthrium-ai-agent-runtime/server
-yarn install
-node cli/index.js agent.yaml --config oe-config.json
-# or serve mode
-node cli/index.js --serve --config oe-config.json
-```
-
-All other connectors (PostgreSQL, MySQL, MongoDB, Redis, S3, Slack, GitHub, REST API, SSH, etc.) work directly with the binary — no Node.js required.
-
----
-
 ## Writing Agents
 
 Agents are plain YAML files. No Python. No framework to learn.
@@ -161,14 +142,7 @@ params:
 
 Turn the runtime into a persistent HTTP API — call agents from mobile apps, web services, or any HTTP client.
 
-```bash
-# Start in serve mode
-oe-runtime-win.exe --serve --config oe-config.json
-# 🚀  OE Runtime Server  v1.4.1
-# Listening  http://localhost:3333
-```
-
-Or set it in `oe-config.json`:
+**Step 1 — Enable server mode in `oe-config.json`:**
 
 ```json
 {
@@ -180,6 +154,16 @@ Or set it in `oe-config.json`:
   },
   "connectors": [ ... ]
 }
+```
+
+> Set **`"enabled": true`** to activate server mode on startup.
+
+**Step 2 — Start in serve mode:**
+
+```bash
+oe-runtime-win.exe --serve --config oe-config.json
+# 🚀  OE Runtime Server  v1.4.1
+# Listening  http://localhost:3333
 ```
 
 ### Endpoints
