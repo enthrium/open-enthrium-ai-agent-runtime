@@ -1,12 +1,12 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Open Enterprise REST API",
+    "title": "Open Enthrium REST API",
     "version": "1.3.1",
-    "description": "Developer API for integrating documents and agents with Open Enterprise.\n\n## Authentication\nAll endpoints require an API key. Generate one in **Admin Panel → API Keys**.\n\nInclude it in every request as a Bearer token:\n```\nAuthorization: Bearer emb_your_api_key_here\n```\n\n## Base URL\nAll endpoints are relative to your Open Enterprise instance URL, e.g. `https://your-domain.com/api/v1`"
+    "description": "Developer API for integrating documents and agents with Open Enthrium.\n\n## Authentication\nAll endpoints require an API key. Generate one in **Admin Panel → API Keys**.\n\nInclude it in every request as a Bearer token:\n```\nAuthorization: Bearer emb_your_api_key_here\n```\n\n## Base URL\nAll endpoints are relative to your Open Enthrium instance URL, e.g. `https://your-domain.com/api/v1`"
   },
   "servers": [
-    { "url": "/api/v1", "description": "This Open Enterprise instance" }
+    { "url": "/api/v1", "description": "This Open Enthrium instance" }
   ],
   "security": [
     { "ApiKeyAuth": [] }
@@ -20,7 +20,7 @@
       "ApiKeyAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "Open Enterprise API Key",
+        "bearerFormat": "Open Enthrium API Key",
         "description": "Create an API key in Admin Panel → API Keys. Keys start with `emb_`."
       }
     },

@@ -116,12 +116,12 @@ jobs:
           files: server/cli/oe-runtime-macos
 
   update-website:
-    if: github.repository == 'openenterprise-info/open-enterprise-ai-agent-runtime'
+    if: github.repository == 'enthrium/open-enthrium-ai-agent-runtime'
     runs-on: ubuntu-latest
     needs: [build-windows, build-linux, build-macos]
     steps:
       - name: Clone website repo
-        run: git clone https://x-access-token:${{ secrets.WEBSITE_PAT }}@github.com/openenterprise-info/open-enterprise-website.git website
+        run: git clone https://x-access-token:${{ secrets.WEBSITE_PAT }}@github.com/enthrium/open-enterprise-website.git website
 
       - name: Update version in runtime.html
         run: |

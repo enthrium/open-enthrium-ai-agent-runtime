@@ -210,7 +210,7 @@ router.get("/admin", authenticate, async (req, res) => {
         documents: ws._count.documents,
       })),
     // Usage vs limits — commercial only; null means unlimited (Infinity can't serialize to JSON)
-    usage: (process.env.LICENSE_TYPE === "enterprise" && process.env.LICENSE_EDITION === "Open Enterprise Commercial" && process.env.LICENSE_PRICE === "custom") ? {
+    usage: (process.env.LICENSE_TYPE === "enterprise" && process.env.LICENSE_EDITION === "Open Enthrium Commercial" && process.env.LICENSE_PRICE === "custom") ? {
       tierName:             tier.name,
       workspaceCount:       workspaces.length,
       workspaceLimit:       isFinite(tier.maxWorkspaces)        ? tier.maxWorkspaces        : null,

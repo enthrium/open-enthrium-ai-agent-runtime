@@ -13,7 +13,7 @@ const args = process.argv.slice(2);
 
 function usage() {
   console.log(`
-oe-runtime — Open Enterprise Agent Runner
+oe-runtime — Open Enthrium Agent Runner
 
 Usage:
   oe-runtime <agent.yaml> [options]   Run an agent once
@@ -75,7 +75,7 @@ if (args.includes("--serve") || _serverEnabledViaCfg) {
   const cfgFile = _earlyCfgFile;
   if (!fs.existsSync(cfgFile)) {
     console.error(`\nError: config file not found: ${cfgFile}`);
-    console.error(`Download a starter kit from the Sample Library: https://github.com/openenterprise-info/open-enterprise-community/releases/latest/download/oe-runtime-samples.zip\n`);
+    console.error(`Download a starter kit from the Sample Library: https://github.com/enthrium/open-enterprise-community/releases/latest/download/oe-runtime-samples.zip\n`);
     process.exit(1);
   }
   const serveCfg = loadConfig(cfgFile);
@@ -112,7 +112,7 @@ if (!fs.existsSync(agentFile)) {
 }
 if (!fs.existsSync(configFile)) {
   console.error(`\nError: config file not found: ${configFile}`);
-  console.error(`Download a starter kit from the Sample Library: https://github.com/openenterprise-info/open-enterprise-community/releases/latest/download/oe-runtime-samples.zip\n`);
+  console.error(`Download a starter kit from the Sample Library: https://github.com/enthrium/open-enterprise-community/releases/latest/download/oe-runtime-samples.zip\n`);
   process.exit(1);
 }
 

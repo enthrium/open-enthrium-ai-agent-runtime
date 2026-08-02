@@ -54,7 +54,7 @@ app.get("/api/instance", async (req, res) => {
   const isEnterprise = isCommercial;
 
   const licenseType = isEnterprise ? "enterprise"                : "community";
-  const edition     = isEnterprise ? "Open Enterprise Commercial" : "Open Enterprise Community";
+  const edition     = isEnterprise ? "Open Enthrium Commercial" : "Open Enthrium Community";
   const price       = isEnterprise ? "custom"                    : "free";
 
   try {
@@ -176,7 +176,7 @@ app.get("/api/v1/docs/postman.json", (req, res) => {
 });
 
 app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, {
-  customSiteTitle: "Open Enterprise API Docs",
+  customSiteTitle: "Open Enthrium API Docs",
   customCss: ".swagger-ui .topbar { display: none }",
   swaggerOptions: { persistAuthorization: true, defaultModelsExpandDepth: -1 },
 }));
@@ -244,7 +244,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 app.listen(PORT, async () => {
-  console.log(`Open Enterprise server running on port ${PORT}`);
+  console.log(`Open Enthrium server running on port ${PORT}`);
   await recoverPendingJobs();
   await scheduler.init(prisma);
   try { await require("./telemetry/bootstrap")(prisma); } catch {}

@@ -1,10 +1,10 @@
-# Contributing to Open Enterprise AI Agent Runtime
+# Contributing to Open Enthrium AI Agent Runtime
 
 Thank you for your interest in contributing. This document covers the repo structure, what belongs here vs the platform repo, and how to submit a contribution.
 
 ## Before You Start
 
-Open an issue first before writing code. PRs without prior discussion may be closed even if the code is good.
+Open an issue first before writing code. This lets us align on whether the change fits the project direction before you invest time building it. PRs that arrive without a prior discussion may be closed even if the code is good.
 
 ---
 
@@ -14,18 +14,18 @@ This repo contains the **standalone runtime binary** — the CLI entry point, HT
 
 | Contribution | Where it goes |
 |---|---|
-| New connector adapter (e.g. Salesforce, SAP) | [open-enterprise-community](https://github.com/openenterprise-info/open-enterprise-community) → `server/src/utils/tools/adapters/` |
+| New connector adapter (e.g. Salesforce, SAP) | [open-enthrium-ai-platform](https://github.com/enthrium/open-enthrium-ai-platform) → `server/src/utils/tools/adapters/` |
 | New sample agent (`agent.yaml` + `oe-config.json`) | **This repo** → `server/cli/samples/<name>/` |
 | Bug in CLI entry point or HTTP server mode | **This repo** → `server/cli/` |
-| Bug in agent execution engine | [open-enterprise-community](https://github.com/openenterprise-info/open-enterprise-community) → `server/src/engine/` |
-| MCP server binary or MCP samples | [open-enterprise-ai-mcp-server](https://github.com/openenterprise-info/open-enterprise-ai-mcp-server) |
+| Bug in agent execution engine | [open-enthrium-ai-platform](https://github.com/enthrium/open-enthrium-ai-platform) → `server/src/engine/` |
+| MCP server binary or MCP samples | [open-enthrium-ai-mcp-server](https://github.com/enthrium/open-enthrium-ai-mcp-server) |
 
 ---
 
 ## Repo Structure
 
 ```
-open-enterprise-ai-agent-runtime/
+open-enthrium-ai-agent-runtime/
 ├── server/
 │   ├── cli/
 │   │   ├── index.js          # oe-runtime CLI entry point
@@ -34,7 +34,7 @@ open-enterprise-ai-agent-runtime/
 │   │       └── <name>/
 │   │           ├── agent.yaml
 │   │           └── oe-config.json
-│   ├── src/                  # Shared adapter source (synced from community)
+│   ├── src/                  # Shared adapter source (synced from platform repo)
 │   │   └── utils/tools/
 │   │       ├── registry.js
 │   │       └── adapters/
@@ -84,9 +84,10 @@ The binary is output to `server/cli/dist/`.
 ## How to Submit a PR
 
 1. Fork the repo and create a branch from `main`
-2. Name your branch: `feat/salesforce-sample`, `fix/serve-port-flag`, `docs/quickstart`
+2. Name your branch descriptively: `feat/salesforce-sample`, `fix/serve-port-flag`, `docs/quickstart`
 3. Keep PRs focused — one fix or feature per PR
-4. All PRs require at least one approval before merging
+4. Fill in the PR template completely
+5. All PRs require at least one approval from a maintainer before merging
 
 ---
 
@@ -95,15 +96,26 @@ The binary is output to `server/cli/dist/`.
 - Match the style of the surrounding code
 - No commented-out code
 - No `console.log` left in production paths
+- If you add a new dependency, explain why an existing one couldn't work
 
 ---
 
 ## Reporting Bugs
 
-Include: what you did, what you expected, what happened, your OS and binary version.
+Use the Bug Report issue template. Include:
+- What you did
+- What you expected
+- What actually happened
+- Your environment (OS, binary version, LLM provider)
 
 ---
 
 ## Security Issues
 
 Do **not** open a public issue for security vulnerabilities. See [SECURITY.md](SECURITY.md).
+
+---
+
+## Questions
+
+Open a GitHub Discussion rather than an issue if you have a question about how something works or whether an idea is worth pursuing.

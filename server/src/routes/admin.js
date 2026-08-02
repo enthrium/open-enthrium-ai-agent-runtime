@@ -11,7 +11,7 @@ router.use(authenticate);
 
 router.get("/users", requireManagerOrAdmin, async (req, res) => {
   const users = await req.db.user.findMany({
-    where:  { NOT: { email: "support@openenterprise.info" } },
+    where:  { NOT: { email: "team@openenthrium.com" } },
     select: { id: true, email: true, name: true, role: true, suspended: true, createdAt: true }
   });
   res.json({ users });
@@ -26,7 +26,7 @@ router.post("/users", requireAdmin, async (req, res) => {
 
   const [tier, currentCount] = await Promise.all([
     getTierFromDB(req.db),
-    req.db.user.count({ where: { NOT: { email: "support@openenterprise.info" } } }),
+    req.db.user.count({ where: { NOT: { email: "team@openenthrium.com" } } }),
   ]);
   if (isFinite(tier.maxUsers) && currentCount >= tier.maxUsers) {
     return res.status(403).json({ error: `Tier limit reached. Max ${tier.maxUsers} user(s) allowed.` });
@@ -348,7 +348,7 @@ router.get("/token-usage", requireAdmin, requireCommercial, async (req, res) => 
       select: { uploadedByUserId: true, embeddingTokens: true, embeddingModel: true }
     }),
     req.db.user.findMany({
-      where: { NOT: { email: "support@openenterprise.info" } },
+      where: { NOT: { email: "team@openenthrium.com" } },
       select: { id: true, name: true, email: true, role: true }
     })
   ]);
