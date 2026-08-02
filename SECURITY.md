@@ -6,7 +6,7 @@
 
 If you discover a security issue, please email us directly:
 
-**support@openenthrium.com**
+**team@openenthrium.com**
 
 Include:
 - A description of the vulnerability
