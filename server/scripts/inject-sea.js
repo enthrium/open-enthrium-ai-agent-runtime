@@ -1,7 +1,7 @@
 "use strict";
-const { execSync }              = require("child_process");
-const { copyFileSync, mkdirSync } = require("fs");
-const path                      = require("path");
+const { execSync }                      = require("child_process");
+const { copyFileSync, mkdirSync, existsSync } = require("fs");
+const path                              = require("path");
 
 const platform = process.platform;
 const isMcp    = process.argv.includes("--mcp");
@@ -18,8 +18,15 @@ const outDir  = isMcp ? "mcp/dist" : "cli";
 const outPath = `${outDir}/${outName}`;
 const blob    = isMcp ? "mcp/sea-prep.blob" : "cli/sea-prep.blob";
 
+// On Windows CI, process.execPath may be a runner-wrapped binary that produces
+// a broken SEA. Allow overriding with CANONICAL_NODE_EXE env var.
+const nodeSrc = (platform === "win32" && process.env.CANONICAL_NODE_EXE && existsSync(process.env.CANONICAL_NODE_EXE))
+  ? process.env.CANONICAL_NODE_EXE
+  : process.execPath;
+
+console.log(`Using node binary: ${nodeSrc}`);
 mkdirSync(outDir, { recursive: true });
-copyFileSync(process.execPath, outPath);
+copyFileSync(nodeSrc, outPath);
 
 const macFlag = platform === "darwin" ? " --macho-segment-name NODE_SEA" : "";
 execSync(

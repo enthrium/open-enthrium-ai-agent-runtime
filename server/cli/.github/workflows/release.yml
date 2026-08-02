@@ -39,6 +39,14 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Download canonical node.exe for SEA
+        shell: pwsh
+        run: |
+          $ver = node --version
+          $url = "https://nodejs.org/dist/$ver/win-x64/node.exe"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\node-canonical.exe"
+          echo "CANONICAL_NODE_EXE=$env:RUNNER_TEMP\node-canonical.exe" >> $env:GITHUB_ENV
+
       - name: Install dependencies
         working-directory: server
         run: yarn install --frozen-lockfile --ignore-scripts
