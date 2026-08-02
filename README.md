@@ -17,9 +17,9 @@
 
 ---
 
-## What is OE Agent Runtime?
+## What is Open Enthrium AI Agent Runtime?
 
-OE Agent Runtime is a standalone, cross-platform binary that reads a declarative YAML agent file, connects to your enterprise data sources, and runs an AI-powered workflow — locally or as an HTTP API server.
+Open Enthrium AI Agent Runtime aka OE Runtime is a standalone, cross-platform binary that reads a declarative YAML agent file, connects to your enterprise data sources, and runs an AI-powered workflow — locally or as an HTTP API server.
 
 - **No LangChain. No Python. No code.** Agents are plain YAML files.
 - **No install.** Single binary for Windows, Linux, and macOS. No Node.js, no Docker on the target machine.
@@ -47,12 +47,19 @@ OE Agent Runtime is a standalone, cross-platform binary that reads a declarative
 
 **1. Download the binary and a starter kit**
 
+| Platform | Binary |
+|---|---|
+| Windows | [oe-runtime-win.exe](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-win.exe) |
+| Linux | [oe-runtime-linux](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-linux) |
+| macOS | [oe-runtime-macos](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-macos) |
+| Sample kit | [oe-runtime-samples.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) — includes agent.yaml + oe-config.json |
+
 ```bash
-# Linux / macOS — make executable
+# Linux — make executable
 chmod +x oe-runtime-linux
 
-# Download a sample kit (includes agent.yaml + oe-config.json)
-# https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip
+# macOS — make executable
+chmod +x oe-runtime-macos
 ```
 
 **2. Edit `oe-config.json`** with your LLM key and connector credentials
@@ -84,14 +91,36 @@ chmod +x oe-runtime-linux
 # Windows
 oe-runtime-win.exe agent.yaml --config oe-config.json
 
-# Linux / macOS
+# Linux
 ./oe-runtime-linux agent.yaml --config oe-config.json
+
+# macOS
+./oe-runtime-macos agent.yaml --config oe-config.json
 
 # With runtime parameters
 ./oe-runtime-linux report.yaml --config oe-config.json \
   --param company="Tesla" \
   --param recipient="ceo@company.com"
 ```
+
+---
+
+## Binary vs Node.js Mode
+
+The standalone binary works for all connector categories **except Oracle, MSSQL, SQLite, and Snowflake** — these use native C++ addons that cannot be bundled into a single executable.
+
+If you need any of these four, run with Node.js instead:
+
+```bash
+git clone https://github.com/enthrium/open-enthrium-ai-agent-runtime.git
+cd open-enthrium-ai-agent-runtime/server
+yarn install
+node cli/index.js agent.yaml --config oe-config.json
+# or serve mode
+node cli/index.js --serve --config oe-config.json
+```
+
+All other connectors (PostgreSQL, MySQL, MongoDB, Redis, S3, Slack, GitHub, REST API, SSH, etc.) work directly with the binary — no Node.js required.
 
 ---
 
@@ -259,7 +288,7 @@ OE Agent Runtime is the open-source standalone execution layer of the [Open Enth
 
 | | |
 |---|---|
-| 🖥️ **Platform (Docker)** | [open-enthrium-community](https://github.com/enthrium/open-enthrium-ai-platform) — full web app with workspaces, RAG, Agent Builder, DLP |
+| 🖥️ **Platform** | [open-enthrium-ai-platform](https://github.com/enthrium/open-enthrium-ai-platform) — full web app with workspaces, RAG, Agent Builder, DLP |
 | 🔌 **MCP Server** | [open-enthrium-ai-mcp-server](https://github.com/enthrium/open-enthrium-ai-mcp-server) — connect Claude Code, Cursor, Windsurf to enterprise data |
 | 🌐 **Website** | [openenthrium.com](https://openenthrium.com) |
 
