@@ -29,20 +29,6 @@ Open Enthrium AI Agent Runtime aka OE Runtime is a standalone, cross-platform bi
 
 ---
 
-## Download
-
-| Platform | Binary |
-|---|---|
-| **Windows** | [oe-runtime-win.exe](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-win.exe) |
-| **Linux** | [oe-runtime-linux](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-linux) |
-| **macOS** | [oe-runtime-macos](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-macos) |
-| **Sample library** | [oe-runtime-samples.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) — 20 ready-to-run starter kits |
-| **Postman collection** | [oe-runtime.postman_collection.json](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime.postman_collection.json) |
-
-> Binaries are built automatically via GitHub Actions on every version tag across all three platforms simultaneously.
-
----
-
 ## Quick Start
 
 **1. Download the binary and a starter kit**
@@ -53,6 +39,7 @@ Open Enthrium AI Agent Runtime aka OE Runtime is a standalone, cross-platform bi
 | Linux | [oe-runtime-linux](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-linux) |
 | macOS | [oe-runtime-macos](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-macos) |
 | Sample kit | [oe-runtime-samples.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) — includes agent.yaml + oe-config.json |
+| Postman collection | [oe-runtime.postman_collection.json](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime.postman_collection.json) |
 
 ```bash
 # Linux — make executable
