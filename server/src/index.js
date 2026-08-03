@@ -171,7 +171,7 @@ app.get("/api/v1/docs/postman.json", (req, res) => {
     ],
   };
 
-  res.setHeader("Content-Disposition", "attachment; filename=\"openenterprise-postman.json\"");
+  res.setHeader("Content-Disposition", "attachment; filename=\"open-enthrium-postman.json\"");
   res.json(collection);
 });
 

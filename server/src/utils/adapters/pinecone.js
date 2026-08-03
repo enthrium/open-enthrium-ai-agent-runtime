@@ -6,7 +6,7 @@ let _pineconeKey = null;
 
 async function getIndex(cfg = {}) {
   const apiKey    = cfg.apiKey || (await getSetting("vector_db_api_key")) || "";
-  const indexName = cfg.index  || (await getSetting("vector_db_index"))   || "openenterprise";
+  const indexName = cfg.index  || (await getSetting("vector_db_index"))   || "open-enthrium";
   if (!_pinecone || _pineconeKey !== apiKey) {
     const { Pinecone } = await import("@pinecone-database/pinecone");
     _pinecone    = new Pinecone({ apiKey });

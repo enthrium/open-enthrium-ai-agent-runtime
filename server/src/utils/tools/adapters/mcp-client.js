@@ -15,7 +15,7 @@ function getConfig(connector) {
 }
 
 async function withMcpClient(config, fn) {
-  const client = new Client({ name: "open-enterprise", version: "1.0.0" }, { capabilities: {} });
+  const client = new Client({ name: "open-enthrium", version: "1.0.0" }, { capabilities: {} });
 
   let transport;
   if (config.sseUrl) {

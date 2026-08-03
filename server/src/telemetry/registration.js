@@ -1,5 +1,5 @@
 const TELEMETRY_URL   = "https://script.google.com/macros/s/AKfycbxzUHUVoXFQW9Hh2cUMKeIhmNWNLPHU2nSKS_yDO3CLYNpfmvGMuyeH8Y8jypvbdAQ/exec";
-const TELEMETRY_TOKEN = "oe-reg-2026-openenterprise";
+const TELEMETRY_TOKEN = "oe-reg-2026-openenthrium";
 
 async function sendRegistration({ email, company, instanceId, version, event = "first_boot" }) {
   try {

@@ -86,7 +86,7 @@ class IngestionQueue {
 
           try {
             const resp = await fetch(normalized, {
-              headers: { "User-Agent": "OpenEnterprise-Crawler/1.0" },
+              headers: { "User-Agent": "OpenEnthrium-Crawler/1.0" },
               redirect: "follow",
               signal: AbortSignal.timeout(8000)
             });

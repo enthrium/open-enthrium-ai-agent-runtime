@@ -123,13 +123,30 @@ jobs:
           tag_name: ${{ github.ref_name }}
           files: server/cli/oe-runtime-macos
 
+  publish-npm:
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-linux, build-macos]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish @openenthrium/oe-runtime to npm
+        working-directory: npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   update-website:
     if: github.repository == 'enthrium/open-enthrium-ai-agent-runtime'
     runs-on: ubuntu-latest
     needs: [build-windows, build-linux, build-macos]
     steps:
       - name: Clone website repo
-        run: git clone https://x-access-token:${{ secrets.WEBSITE_PAT }}@github.com/enthrium/open-enterprise-website.git website
+        run: git clone https://x-access-token:${{ secrets.WEBSITE_PAT }}@github.com/enthrium/open-enthrium-website.git website
 
       - name: Update version in runtime.html
         run: |

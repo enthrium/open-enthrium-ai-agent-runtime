@@ -183,7 +183,7 @@ router.get("/callback", async (req, res) => {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept:        "application/json",
-        ...(provider === "github" ? { "User-Agent": "OpenEnterprise-SSO" } : {}),
+        ...(provider === "github" ? { "User-Agent": "OpenEnthrium-SSO" } : {}),
       },
     });
 

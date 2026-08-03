@@ -6,7 +6,7 @@ function getClient(connector) {
 
   const brokers  = (auth.brokers || cfg.brokers || auth.baseUrl || cfg.baseUrl || "localhost:9092")
     .split(",").map(b => b.trim().replace(/^https?:\/\//, ""));
-  const clientId = auth.clientId || cfg.clientId || "open-enterprise";
+  const clientId = auth.clientId || cfg.clientId || "open-enthrium";
 
   const kafkaCfg = { clientId, brokers };
 

@@ -144,7 +144,7 @@ router.post("/:slug/ingest-github", authenticate, requireManagerOrAdmin, async (
 
   const axios  = require("axios");
   const os     = require("os");
-  const headers = token ? { Authorization: `Bearer ${token}`, "User-Agent": "OpenEnterprise" } : { "User-Agent": "OpenEnterprise" };
+  const headers = token ? { Authorization: `Bearer ${token}`, "User-Agent": "OpenEnthrium" } : { "User-Agent": "OpenEnthrium" };
 
   // Supported text/code extensions
   const TEXT_EXTS = new Set([

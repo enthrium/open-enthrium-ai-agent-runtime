@@ -10,6 +10,7 @@
 [![Windows](https://img.shields.io/badge/Windows-Download-0078D4?logo=windows&logoColor=white)](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-win.exe)
 [![Linux](https://img.shields.io/badge/Linux-Download-E95420?logo=linux&logoColor=white)](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-linux)
 [![macOS](https://img.shields.io/badge/macOS-Download-000000?logo=apple&logoColor=white)](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-macos)
+[![npm](https://img.shields.io/npm/v/@openenthrium/oe-runtime?color=4f46e5&label=npm)](https://www.npmjs.com/package/@openenthrium/oe-runtime)
 [![Website](https://img.shields.io/badge/Website-openenthrium.com-4f46e5)](https://www.openenthrium.com)
 [![Discord](https://img.shields.io/badge/Discord-Community-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/vWsZ24Msn)
 
@@ -29,7 +30,25 @@ Open Enthrium AI Agent Runtime aka OE Runtime is a standalone, cross-platform bi
 
 ---
 
-## Quick Start
+## Quick Start via npm (Recommended)
+
+No binary download needed — `npx` handles everything automatically:
+
+**macOS / Linux:**
+```bash
+npx -y @openenthrium/oe-runtime run agent.yaml --config oe-config.json
+```
+
+**Windows:**
+```bash
+npx -y @openenthrium/oe-runtime run agent.yaml --config oe-config.json
+```
+
+> **Note:** `-y` skips npx's install confirmation prompt — without it, npx blocks waiting for keyboard input and the agent never runs.
+
+---
+
+## Quick Start (Binary)
 
 **1. Download the binary and a sample kit**
 

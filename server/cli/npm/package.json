@@ -1,0 +1,44 @@
+{
+    "name": "@openenthrium/oe-runtime",
+    "version": "1.5.7",
+    "description": "OE Runtime - run AI agents against 2,600+ enterprise data sources. One binary, one YAML agent, one config file.",
+    "homepage": "https://www.openenthrium.com/runtime.html",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/enthrium/open-enthrium-ai-agent-runtime.git"
+    },
+    "license": "Apache-2.0",
+    "bin": {
+        "oe-runtime": "bin.js"
+    },
+    "scripts": {
+        "postinstall": "node postinstall.js"
+    },
+    "files": [
+        "bin.js",
+        "postinstall.js",
+        "README.md"
+    ],
+    "engines": {
+        "node": ">=18"
+    },
+    "keywords": [
+        "ai-agents",
+        "agent-runtime",
+        "yaml-agents",
+        "enterprise-ai",
+        "ai-automation",
+        "claude",
+        "openai",
+        "database",
+        "postgresql",
+        "mysql",
+        "mongodb",
+        "s3",
+        "slack",
+        "github",
+        "ssh",
+        "rest-api",
+        "workflow-automation"
+    ]
+}
