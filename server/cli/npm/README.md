@@ -58,12 +58,12 @@ connectors:
 
 macOS / Linux:
 ```bash
-npx -y @openenthrium/oe-runtime run agent.yaml --config oe-config.json
+npx -y @openenthrium/oe-runtime agent.yaml --config oe-config.json
 ```
 
 Windows:
 ```bash
-npx -y @openenthrium/oe-runtime run agent.yaml --config oe-config.json
+npx -y @openenthrium/oe-runtime agent.yaml --config oe-config.json
 ```
 
 > **Note:** `-y` skips npx's install confirmation prompt — without it, npx blocks waiting for keyboard input and the agent never runs.
@@ -74,7 +74,7 @@ npx -y @openenthrium/oe-runtime run agent.yaml --config oe-config.json
 
 | Mode | Command | Best for |
 |---|---|---|
-| **CLI** | `npx -y @openenthrium/oe-runtime run agent.yaml --config oe-config.json` | One-shot agent runs, scripts, CI/CD |
+| **CLI** | `npx -y @openenthrium/oe-runtime agent.yaml --config oe-config.json` | One-shot agent runs, scripts, CI/CD |
 | **HTTP Server** | `npx -y @openenthrium/oe-runtime --serve --config oe-config.json` | Persistent API server any app can call |
 
 ---

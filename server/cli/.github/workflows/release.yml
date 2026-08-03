@@ -135,7 +135,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: Publish @openenthrium/oe-runtime to npm
-        working-directory: npm
+        working-directory: server/cli/npm
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
