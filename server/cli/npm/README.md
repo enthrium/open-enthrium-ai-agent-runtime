@@ -36,7 +36,12 @@ OE Runtime is a standalone binary that reads a declarative YAML agent file, conn
       "user": "postgres",
       "password": "secret"
     }
-  ]
+  ],
+  "server": {
+    "enabled": true,
+    "port": 3333,
+    "apiKey": "your-secret"
+  }
 }
 ```
 
@@ -76,6 +81,61 @@ npx -y @openenthrium/oe-runtime agent.yaml --config oe-config.json
 |---|---|---|
 | **CLI** | `npx -y @openenthrium/oe-runtime agent.yaml --config oe-config.json` | One-shot agent runs, scripts, CI/CD |
 | **HTTP Server** | `npx -y @openenthrium/oe-runtime --serve --config oe-config.json` | Persistent API server any app can call |
+
+> **Tip:** Set `"server": { "enabled": true }` in `oe-config.json` to auto-start as HTTP server without the `--serve` flag.
+
+---
+
+## HTTP Server Endpoints
+
+All endpoints require the `x-api-key` header when `server.apiKey` is set in your config.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/health` | Liveness check — returns `{ "status": "ok", "version": "..." }` |
+| `POST` | `/run` | Run an agent from an inline YAML string |
+| `POST` | `/run-file` | Run an agent from a YAML file path on disk |
+
+**POST /run** — body:
+```json
+{
+  "yaml": "name: Hi\nsteps:\n  - name: Greet\n    content: Say hi!",
+  "params": {},
+  "input": "optional user message"
+}
+```
+
+**POST /run-file** — body:
+```json
+{
+  "file": "/path/to/agent.yaml",
+  "params": { "topic": "AI trends" },
+  "input": "optional user message"
+}
+```
+
+**Response** (both /run and /run-file):
+```json
+{ "success": true, "output": "...", "duration_ms": 1234 }
+```
+
+**Example curl:**
+```bash
+# Health check
+curl http://localhost:3333/health -H "x-api-key: your-secret"
+
+# Run inline agent
+curl -X POST http://localhost:3333/run \
+  -H "x-api-key: your-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"yaml":"name: Hi\nsteps:\n  - name: Greet\n    content: Say hi!"}'
+
+# Run agent from file
+curl -X POST http://localhost:3333/run-file \
+  -H "x-api-key: your-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"file":"/path/to/agent.yaml","params":{"topic":"AI trends"}}'
+```
 
 ---
 

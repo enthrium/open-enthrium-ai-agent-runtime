@@ -23,7 +23,8 @@ if (!fs.existsSync(BIN_PATH)) {
   process.exit(1);
 }
 
-const child = spawn(BIN_PATH, process.argv.slice(2), { stdio: "inherit" });
+const cwd = process.env.INIT_CWD || process.cwd();
+const child = spawn(BIN_PATH, process.argv.slice(2), { stdio: "inherit", cwd });
 child.on("exit", (code) => process.exit(code ?? 0));
 child.on("error", (err) => {
   console.error("OE Runtime:", err.message);
