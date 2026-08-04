@@ -1,7 +1,7 @@
 <div align="center">
 
 <h1>Open Enthrium AI Agent Runtime</h1>
-<h3>aka OE Runtime · Standalone AI Agent Executor · Apache-2.0 · Windows · Linux · macOS</h3>
+<h3>OE Runtime · Standalone AI Agent Executor · Apache-2.0 · Windows · Linux · macOS</h3>
 
 **Run AI agents against any enterprise data source — no cloud, no platform, just a single binary.**
 
@@ -20,7 +20,7 @@
 
 ## What is Open Enthrium AI Agent Runtime?
 
-Open Enthrium AI Agent Runtime aka OE Runtime is a standalone, cross-platform binary that reads a declarative YAML agent file, connects to your enterprise data sources, and runs an AI-powered workflow — locally or as an HTTP API server.
+Open Enthrium AI Agent Runtime (OE Runtime) is a standalone, cross-platform binary that reads a declarative YAML agent file, connects to your enterprise data sources, and runs an AI-powered workflow — locally or as an HTTP API server.
 
 - **No LangChain. No Python. No code.** Agents are plain YAML files.
 - **No install.** Single binary for Windows, Linux, and macOS. No Node.js, no Docker on the target machine.
@@ -30,25 +30,102 @@ Open Enthrium AI Agent Runtime aka OE Runtime is a standalone, cross-platform bi
 
 ---
 
+## Sample Library
+
+Download [oe-runtime-samples.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) for 21 ready-to-run starter kits — each with a complete `agent.yaml` + `oe-config.json`:
+
+`sql-databases` · `nosql-cache` · `file-storage` · `cloud-drives` · `email` · `team-messaging` · `telegram` · `productivity-crm` · `rest-api` · `graphql` · `ssh` · `message-queues` · `iot-messaging` · `web-search` · `ocr-vision` · `image-generation` · `speech-audio` · `video-generation` · `music-generation` · `blockchain-web3` · `directory-identity`
+
+---
+
 ## Quick Start via npm (Recommended)
 
-No binary download needed — `npx` handles everything automatically:
+No binary download needed — `npx` handles everything automatically.
 
-**macOS / Linux:**
-```bash
-npx -y @openenthrium/oe-runtime run agent.yaml --config oe-config.json
+**1. Edit `oe-config.json`** with your LLM key and connector credentials
+
+```json
+{
+  "llm": {
+    "provider": "openai",
+    "apiKey": "sk-...",
+    "model": "gpt-4o"
+  },
+  "connectors": [
+    {
+      "connection_name": "My Database",
+      "connection_type": "postgresql",
+      "host": "localhost",
+      "port": 5432,
+      "database": "mydb",
+      "user": "postgres",
+      "password": "YOUR_DB_PASSWORD"
+    },
+    {
+      "connection_name": "My Telegram Bot",
+      "connection_type": "telegram",
+      "baseUrl": "https://api.telegram.org/botYOUR_BOT_TOKEN"
+    }
+  ],
+  "server": {
+    "enabled": false,
+    "port": 3333,
+    "apiKey": "your-secret"
+  }
+}
 ```
 
-**Windows:**
+**2. Edit `agent.yaml`** if needed — adjust the instructions or steps for your use case
+
+Agents are plain YAML files. No Python. No framework to learn.
+
+```yaml
+name: DB Summary Agent
+description: Queries a database and sends a summary to Telegram
+instructions: |
+  You are a data analyst. Query the database for key metrics,
+  summarise the findings clearly, and send the report to Telegram.
+steps:
+  - name: Query metrics
+    content: |
+      Run: SELECT table_name, table_rows
+           FROM information_schema.tables
+           WHERE table_schema = 'public'
+           ORDER BY table_rows DESC;
+      Summarise the top 10 tables by row count.
+  - name: Send report
+    content: |
+      Send a clean summary report to Telegram.
+connectors:
+  - connection_name: My Database
+    connection_type: postgresql
+  - connection_name: My Telegram Bot
+    connection_type: telegram
+```
+
+### YAML Agent Reference
+
+| Field | Required | Description |
+|---|---|---|
+| `name` | No | Display name shown in terminal |
+| `description` | No | Short description |
+| `instructions` | Yes | System prompt — what the agent does and how |
+| `params` | No | Named parameters; substituted via `{{name}}` in prompt and steps |
+| `connectors` | No | Connector references matched to credentials in `oe-config.json` |
+| `steps` | No | Named workflow steps injected sequentially into the system prompt |
+| `maxRounds` | No | Max LLM tool-call iterations (default: 25) |
+
+**3. Run it**
+
 ```bash
-npx -y @openenthrium/oe-runtime run agent.yaml --config oe-config.json
+npx -y @openenthrium/oe-runtime agent.yaml --config oe-config.json
 ```
 
 > **Note:** `-y` skips npx's install confirmation prompt — without it, npx blocks waiting for keyboard input and the agent never runs.
 
 ---
 
-## Quick Start (Binary)
+## Download & Run
 
 **1. Download the binary and a sample kit**
 
@@ -70,27 +147,6 @@ chmod +x oe-runtime-macos
 
 **2. Edit `oe-config.json`** with your LLM key and connector credentials
 
-```json
-{
-  "llm": {
-    "provider": "openai",
-    "apiKey": "sk-...",
-    "model": "gpt-4o"
-  },
-  "connectors": [
-    {
-      "connection_name": "my-db",
-      "connection_type": "postgresql",
-      "host": "localhost",
-      "port": 5432,
-      "database": "mydb",
-      "user": "postgres",
-      "password": "secret"
-    }
-  ]
-}
-```
-
 **3. Run your agent**
 
 ```bash
@@ -108,52 +164,6 @@ oe-runtime-win.exe agent.yaml --config oe-config.json
   --param company="Tesla" \
   --param recipient="ceo@company.com"
 ```
-
----
-
-## Writing Agents
-
-Agents are plain YAML files. No Python. No framework to learn.
-
-```yaml
-name: DB Summary Agent
-description: Queries a database and emails a summary report
-instructions: |
-  You are a data analyst. Query the database for key metrics,
-  summarise the findings clearly, and email the report to the recipient.
-steps:
-  - name: Query metrics
-    content: |
-      Run: SELECT table_name, table_rows
-           FROM information_schema.tables
-           WHERE table_schema = DATABASE()
-           ORDER BY table_rows DESC;
-      Summarise the top 10 tables by row count.
-  - name: Send report
-    content: |
-      Email a clean report to {{recipient}}.
-      Subject: Database Summary — TODAY'S DATE
-connectors:
-  - connection_name: my-db
-    connection_type: mysql
-  - connection_name: Company Email
-    connection_type: smtp
-params:
-  - name: recipient
-    default: team@yourcompany.com
-```
-
-### YAML Agent Reference
-
-| Field | Required | Description |
-|---|---|---|
-| `name` | No | Display name shown in terminal |
-| `description` | No | Short description |
-| `instructions` | Yes | System prompt — what the agent does and how |
-| `params` | No | Named parameters; substituted via `{{name}}` in prompt and steps |
-| `connectors` | No | Connector references matched to credentials in `oe-config.json` |
-| `steps` | No | Named workflow steps injected sequentially into the system prompt |
-| `maxRounds` | No | Max LLM tool-call iterations (default: 25) |
 
 ---
 
@@ -180,40 +190,77 @@ Turn the runtime into a persistent HTTP API — call agents from mobile apps, we
 **Step 2 — Start in serve mode:**
 
 ```bash
+# Windows
 oe-runtime-win.exe --serve --config oe-config.json
-# 🚀  OE Runtime Server  v1.4.1
+
+# Linux
+./oe-runtime-linux --serve --config oe-config.json
+
+# macOS
+./oe-runtime-macos --serve --config oe-config.json
+
+# 🚀  OE Runtime Server  v1.5.9
 # Listening  http://localhost:3333
 ```
 
 ### Endpoints
 
+All endpoints require the `x-api-key` header when `server.apiKey` is set in your config.
+
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/health` | Liveness check — returns `{ status, version }` |
+| `GET` | `/health` | Liveness check — returns `{ "status": "ok", "version": "..." }` |
 | `POST` | `/run` | Run an agent from an inline YAML string |
-| `POST` | `/run-file` | Run an agent from a YAML file path on the server |
+| `POST` | `/run-file` | Run an agent from a YAML file path on disk |
 
-```bash
-curl -X POST http://localhost:3333/run \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: your-secret-api-key" \
-  -d '{
-    "yaml": "name: Hello\nsteps:\n  - name: ping\n    content: say hello",
-    "params": {}
-  }'
+**POST /run** — body:
+```json
+{
+  "yaml": "name: Hi\nsteps:\n  - name: Greet\n    content: Say hi!",
+  "params": {},
+  "input": "Run"
+}
 ```
 
+**POST /run-file** — body:
 ```json
-{ "success": true, "output": "Hello! How can I help you today?", "duration_ms": 1823 }
+{
+  "file": "/path/to/agent.yaml",
+  "params": { "topic": "AI trends" },
+  "input": "Run"
+}
+```
+
+**Response** (both /run and /run-file):
+```json
+{ "success": true, "output": "...", "duration_ms": 1234 }
+```
+
+**Example curl:**
+```bash
+# Health check
+curl http://localhost:3333/health -H "x-api-key: your-secret"
+
+# Run inline agent
+curl -X POST http://localhost:3333/run \
+  -H "x-api-key: your-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"yaml":"name: Hi\nsteps:\n  - name: Greet\n    content: Say hi!","input":"Run"}'
+
+# Run agent from file
+curl -X POST http://localhost:3333/run-file \
+  -H "x-api-key: your-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"file":"/path/to/agent.yaml","params":{"topic":"AI trends"},"input":"Run"}'
 ```
 
 ---
 
 ## Binary vs Node.js Mode
 
-The standalone binary works for all connector categories **except** Oracle, MSSQL, SQLite, and Snowflake — these use native C++ addons that cannot be bundled into a single executable.
+Both the **standalone binary** and **`npx @openenthrium/oe-runtime`** exclude Oracle, MSSQL, SQLite, and Snowflake — these use native C++ addons that cannot be bundled into a single executable. npx downloads the same binary under the hood, so it has the same limitation.
 
-If you need any of these four, run with Node.js instead:
+If you need any of these four, run with Node.js directly instead:
 ```bash
 git clone https://github.com/enthrium/open-enthrium-ai-agent-runtime.git
 cd open-enthrium-ai-agent-runtime/server
@@ -223,7 +270,7 @@ node cli/index.js agent.yaml --config oe-config.json
 node cli/index.js --serve --config oe-config.json
 ```
 
-All other connectors (PostgreSQL, MySQL, MongoDB, Redis, S3, Slack, GitHub, REST API, SSH, etc.) work directly with the binary — no Node.js required.
+All other connectors (PostgreSQL, MySQL, MongoDB, Redis, S3, Slack, GitHub, REST API, SSH, etc.) work directly with the binary or npx — no Node.js clone required.
 
 ---
 
@@ -261,17 +308,27 @@ All other connectors (PostgreSQL, MySQL, MongoDB, Redis, S3, Slack, GitHub, REST
 
 ---
 
-## Sample Library
-
-Download [oe-runtime-samples.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) for 20 ready-to-run starter kits — each with a complete `agent.yaml` + `oe-config.json`:
-
-`sql-databases` · `nosql-cache` · `file-storage` · `cloud-drives` · `email` · `team-messaging` · `productivity-crm` · `rest-api` · `graphql` · `ssh` · `message-queues` · `iot-messaging` · `web-search` · `ocr-vision` · `image-generation` · `speech-audio` · `video-generation` · `music-generation` · `blockchain-web3` · `directory-identity`
-
----
 
 ## Supported LLM Providers
 
 `openai` · `anthropic` · `azure` · `groq` · `gemini` · `ollama` · `mistral` · `deepseek` · `together` · `fireworks` · `bedrock` · and more
+
+---
+
+## Contributing
+
+Contributions are welcome. Before opening a PR:
+
+- [Open an issue](https://github.com/enthrium/open-enthrium-ai-agent-runtime/issues/new) to discuss the change — especially for new features
+- Fork the repository and branch from `main`
+- Test your changes locally
+- [Open a PR](https://github.com/enthrium/open-enthrium-ai-agent-runtime/compare) with a clear description of what and why
+
+Where contributions are most valuable:
+
+- New connector adapters (`server/src/utils/tools/adapters/`)
+- Agent YAML examples for the community marketplace
+- Bug fixes with clear reproduction steps
 
 ---
 

@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.6.0] — 2026-08-04
+
+### Changed
+- **CLI README** — restructured Quick Start to 3 steps (config → agent.yaml → run); agent.yaml example + YAML Agent Reference moved inline under step 2; Writing Agents section removed; Download & Run simplified; HTTP Server Mode expanded with per-platform commands, full endpoint docs, and curl examples
+- **npm README** — fully aligned with CLI README; added Sample Library, Connector Catalog, Supported LLM Providers, Contributing, and Part of Open Enthrium sections; sample count updated to 21
+- **Contributing section** — added to both READMEs with hyperlinks to GitHub issues and PR pages
+- **Connector examples** — telegram config corrected to use `baseUrl`; connection names updated to match actual samples (`My Database`, `My Telegram Bot`, `YOUR_DB_PASSWORD`)
+
+---
+
 ## [v1.4.8] — 2026-08-01
 
 ### Changed
