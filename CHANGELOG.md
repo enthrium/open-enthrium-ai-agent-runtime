@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.6.1] — 2026-08-04
+
+### Fixed
+- **Agent YAML example** — Telegram send step now explicitly uses `sendMessage` endpoint and discovers `chat_id` dynamically via `getUpdates`; query step restricted with "no other queries" to prevent LLM from running extra queries
+
+---
+
 ## [v1.6.0] — 2026-08-04
 
 ### Changed

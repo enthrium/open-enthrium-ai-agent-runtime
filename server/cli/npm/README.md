@@ -79,17 +79,28 @@ description: Queries a database and sends a summary to Telegram
 instructions: |
   You are a data analyst. Query the database for key metrics,
   summarise the findings clearly, and send the report to Telegram.
+  Complete all steps fully before writing your report.
 steps:
   - name: Query metrics
     content: |
-      Run: SELECT table_name, table_rows
-           FROM information_schema.tables
-           WHERE table_schema = 'public'
-           ORDER BY table_rows DESC;
-      Summarise the top 10 tables by row count.
+      Run exactly this query against My Database, no other queries:
+      SELECT table_name FROM information_schema.tables
+      WHERE table_schema = 'public';
+      Summarise the results.
+  - name: Get chat ID
+    content: |
+      Call My Telegram Bot:
+      GET /getUpdates with params: { "limit": "1" }
+      Extract the chat_id from the most recent message.
   - name: Send report
     content: |
-      Send a clean summary report to Telegram.
+      Send the summary via My Telegram Bot:
+      POST /sendMessage with body:
+      {
+        "chat_id": "<chat_id from previous step>",
+        "text": "<your summary>",
+        "parse_mode": "Markdown"
+      }
 connectors:
   - connection_name: My Database
     connection_type: postgresql
