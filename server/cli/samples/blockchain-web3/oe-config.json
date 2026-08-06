@@ -13,9 +13,7 @@
     {
       "connection_name": "Ethereum",
       "connection_type": "web3",
-      "provider": "infura",
-      "apiKey": "YOUR_INFURA_PROJECT_ID",
-      "network": "mainnet"
+      "baseUrl": "https://eth.llamarpc.com"
     }
   ]
 }

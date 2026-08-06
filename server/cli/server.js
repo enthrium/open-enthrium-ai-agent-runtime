@@ -145,6 +145,7 @@ exports.start = function start(config) {
     const line = "─".repeat(52);
     console.log(`\n${line}`);
     console.log(`  🚀  OE Runtime Server  v${VERSION}`);
+    console.log(`      Run AI agents via HTTP`);
     console.log(`${line}`);
     console.log(`  Listening  http://localhost:${port}`);
     console.log(`  GET  /health      — liveness check`);

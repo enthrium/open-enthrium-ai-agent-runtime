@@ -5,7 +5,8 @@ const fs   = require("fs");
 const path = require("path");
 const yaml = require("js-yaml");
 
-const engine = require("../src/engine");
+const engine  = require("../src/engine");
+const VERSION = require("../package.json").version;
 
 // ── arg parsing ──────────────────────────────────────────────────────────────
 
@@ -201,8 +202,12 @@ const agentSpec = {
 
 // ── run ──────────────────────────────────────────────────────────────────────
 
-const line = "─".repeat(60);
+const line = "─".repeat(52);
 
+console.log(`\n${line}`);
+console.log(`  🚀   OE Runtime Standalone  v${VERSION}`);
+console.log(`        Run AI agents via CLI`);
+console.log(`${line}`);
 console.log(`\n🤖  ${agentYaml.name || path.basename(agentFile)}`);
 if (agentYaml.description) console.log(`    ${agentYaml.description}`);
 console.log(`\n    LLM        ${llmConfig.provider} / ${llmConfig.model || "default"}`);

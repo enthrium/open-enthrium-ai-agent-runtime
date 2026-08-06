@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.6.2] — 2026-08-06
+
+### Added
+- **Startup banners** — standalone CLI mode now prints a banner on start (`OE Runtime Standalone vX.X.X / Run AI agents via CLI`); server mode banner updated to match (`OE Runtime Server vX.X.X / Run AI agents via HTTP`)
+- **VERSION constant** — `index.js` now reads version from `package.json` for use in the banner
+
+### Fixed
+- **blockchain-web3 sample** — `oe-config.json` now uses free public RPC (`https://eth.llamarpc.com`); removed incorrect `provider`/`apiKey`/`network` fields
+
+---
+
 ## [v1.6.1] — 2026-08-04
 
 ### Fixed

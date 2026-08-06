@@ -165,7 +165,8 @@ Turn the runtime into a persistent HTTP API — call agents from mobile apps, we
 
 ```bash
 npx -y @openenthrium/oe-runtime --serve --config oe-config.json
-# 🚀  OE Runtime Server  v1.5.9
+# 🚀  OE Runtime Server  v1.6.1
+#      Run AI agents via HTTP
 # Listening  http://localhost:3333
 ```
 

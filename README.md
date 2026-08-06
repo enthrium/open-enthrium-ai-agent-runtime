@@ -210,7 +210,8 @@ oe-runtime-win.exe --serve --config oe-config.json
 # macOS
 ./oe-runtime-macos --serve --config oe-config.json
 
-# 🚀  OE Runtime Server  v1.5.9
+# 🚀  OE Runtime Server  v1.6.1
+#      Run AI agents via HTTP
 # Listening  http://localhost:3333
 ```
 
