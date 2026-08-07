@@ -11,6 +11,11 @@
   },
   "connectors": [
     {
+      "connection_name": "Blog",
+      "connection_type": "restApi",
+      "baseUrl": "https://www.openenthrium.com"
+    },
+    {
       "connection_name": "OpenAI",
       "connection_type": "restApi",
       "baseUrl": "https://api.openai.com/v1",

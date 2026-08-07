@@ -1,29 +1,37 @@
-name: Video Creator Agent
-description: Generates a short teaching video on any topic — creates a slide plan, generates images and narration via OpenAI, assembles and exports an MP4 via Canva.
+name: Blog to Video Agent
+description: Converts a blog post into a teaching video — fetches content, plans slides, generates images and narration, creates a Canva presentation, and exports an MP4.
 
 instructions: |
-  You are a video production agent. Follow each step in order and pass outputs
+  You are a teaching video producer. Follow each step exactly and pass outputs
   from one step into the next. Do not skip steps or combine them.
 
 params:
-  - name: topic
-    description: The topic or title of the video to create
-    default: "How AI Agents Work"
+  - name: blog_url
+    description: Full URL of the blog post to convert into a video
+    default: https://www.openenthrium.com/blog/ai-telegram-bot-agent.html
 
 llm:
   provider: openai
   model: gpt-4o
 
 connectors:
+  - connection_name: Blog
+    connection_type: restApi
   - connection_name: OpenAI
     connection_type: restApi
   - connection_name: Canva
     connection_type: restApi
 
 steps:
+  - name: Fetch Blog Content
+    use: Blog
+    content: |
+      GET {{blog_url}}
+      Extract all heading and paragraph text. Return the full article text only — no HTML tags.
+
   - name: Plan Slides
     content: |
-      You are a teaching video scriptwriter. Create exactly 5 slides for a short video on: {{topic}}
+      You are a teaching video scriptwriter. Convert the blog content into exactly 6 slides.
       Output a JSON array — one object per slide with these exact keys:
       {
         "slide_number": 1,
@@ -32,24 +40,24 @@ steps:
         "narration": "20-30 words spoken aloud for this slide — conversational and clear",
         "image_prompt": "detailed DALL-E 3 prompt for a professional, relevant background image"
       }
-      Slide 1 = title and intro. Slides 2-4 = one key concept each. Slide 5 = summary and takeaway.
+      Slide 1 = title and intro. Slides 2-5 = one key concept each. Slide 6 = summary and next steps.
       Output only the JSON array, nothing else.
 
   - name: Generate Slide Images
     use: OpenAI
     content: |
-      For each of the 5 slides, POST /images/generations with:
+      For each of the 6 slides, POST /images/generations with:
         model: dall-e-3
         prompt: the slide's image_prompt
         size: 1792x1024
         quality: standard
         n: 1
-      Collect all 5 image URLs in slide order. Return them as a numbered list.
+      Collect all 6 image URLs in slide order. Return them as a numbered list.
 
   - name: Generate Narration Audio
     use: OpenAI
     content: |
-      Join all 5 slide narrations in order into one script, separated by " ... " between slides.
+      Join all 6 slide narrations in order into one script, separated by " ... " between slides.
       POST /audio/speech with:
         model: tts-1
         voice: nova
@@ -66,20 +74,20 @@ steps:
   - name: Upload Images to Canva
     use: Canva
     content: |
-      For each of the 5 slide image URLs from step 2, POST /assets with the image URL.
-      Use name "slide-1.png" through "slide-5.png".
-      Collect and return all 5 Canva asset IDs in order.
+      For each of the 6 slide image URLs from step 3, POST /assets with the image URL.
+      Use name "slide-1.png" through "slide-6.png".
+      Collect and return all 6 Canva asset IDs in order.
 
   - name: Upload Audio to Canva
     use: Canva
     content: |
-      POST /assets to upload the narration audio file saved in step 3.
+      POST /assets to upload the narration audio file saved in step 4.
       Use name "narration.mp3". Return the Canva audio asset ID.
 
   - name: Add Slides to Design
     use: Canva
     content: |
-      For each of the 5 slides, POST /designs/{designId}/pages:
+      For each of the 6 slides, POST /designs/{designId}/pages:
         - Set the slide image asset as the page background
         - Add a text element for the slide title
         - Add a text element for the bullet points
@@ -94,7 +102,7 @@ steps:
 
   - name: Report
     content: |
-      The video is ready. Provide:
+      The teaching video is ready. Provide:
       - The Canva MP4 download URL
       - A summary of each slide title
-      - Topic covered and estimated video length
+      - Total number of slides and estimated video length

@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.6.3] — 2026-08-07
+
+### Added
+- **blog-to-video sample** — new 22nd starter kit; fetches a blog post, plans 6 slides, generates DALL-E 3 images + OpenAI TTS narration, assembles and exports an MP4 via Canva; requires `bearerToken` in the Canva connector config
+- **video-generation sample** — rewritten to use the same Canva pipeline (DALL-E 3 + TTS + Canva export); 5 slides, topic driven via `--param topic=...`
+
+### Fixed
+- **REST API adapter** (`src/utils/tools/adapters/rest-api.js`) — POST/PUT/PATCH bodies are now serialized as URL-encoded form data when the connector sets `Content-Type: application/x-www-form-urlencoded`; previously all bodies were sent as JSON regardless of the Content-Type header
+
+---
+
 ## [v1.6.2] — 2026-08-06
 
 ### Added

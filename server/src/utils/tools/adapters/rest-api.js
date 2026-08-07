@@ -57,11 +57,15 @@ async function executeTool(action, args, connector) {
   const opts    = { headers, params, timeout: 300000, responseType: "arraybuffer" };
 
   try {
+    // Serialize body as URL-encoded form data when Content-Type demands it
+    const isFormEncoded = (headers["Content-Type"] || "").includes("application/x-www-form-urlencoded");
+    const serializeBody = (b) => isFormEncoded ? new URLSearchParams(b || {}).toString() : (b || {});
+
     let res;
     if (action === "get")    res = await axios.get(url, opts);
-    if (action === "post")   res = await axios.post(url,  args.body || {}, opts);
-    if (action === "put")    res = await axios.put(url,   args.body || {}, opts);
-    if (action === "patch")  res = await axios.patch(url, args.body || {}, opts);
+    if (action === "post")   res = await axios.post(url,  serializeBody(args.body), opts);
+    if (action === "put")    res = await axios.put(url,   serializeBody(args.body), opts);
+    if (action === "patch")  res = await axios.patch(url, serializeBody(args.body), opts);
     if (action === "delete") res = await axios.delete(url, opts);
     if (!res) return "Unknown HTTP action.";
 
