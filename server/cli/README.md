@@ -24,7 +24,7 @@ Open Enthrium AI Agent Runtime (OE Runtime) is a standalone, cross-platform bina
 
 - **No LangChain. No Python. No code.** Agents are plain YAML files.
 - **No install.** Single binary for Windows, Linux, and macOS. No Node.js, no Docker on the target machine.
-- **45+ connector categories.** PostgreSQL, MySQL, MongoDB, S3, Slack, GitHub, SSH, REST API, Kafka, and 2,600+ more — all built in.
+- **45+ connector categories.** PostgreSQL, MySQL, MongoDB, S3, Slack, GitHub, SSH, REST API, Kafka, and more — all built in.
 - **HTTP server mode.** `--serve` turns the runtime into a persistent API server any app can call.
 - **Self-hosted.** Runs entirely on your own machine. No call-home. Own your data.
 
@@ -288,7 +288,7 @@ All other connectors (PostgreSQL, MySQL, MongoDB, Redis, S3, Slack, GitHub, REST
 
 ## Connector Catalog
 
-**2,600+ connectors across 45+ categories** — built in, no custom code required.
+**Connectors across multiple categories** — built in, no custom code required.
 
 | Category | Examples |
 |---|---|

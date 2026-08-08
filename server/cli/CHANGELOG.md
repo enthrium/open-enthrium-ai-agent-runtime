@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.6.6] — 2026-08-08
+
+### Added
+- OE MCP: `run_agent` tool — run any YAML agent directly from Claude Code, Cursor, Windsurf, or Codex
+- OE MCP: Auto-detects `oe-config.json` in the agent's own directory for correct LLM + connector config
+
+### Changed
+- Removed inflated connector count claims from all docs
+
+---
+
 ## [v1.6.5] — 2026-08-08
 
 ### Added
