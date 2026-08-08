@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.6.5] — 2026-08-08
+
+### Added
+- OE MCP: Persistent action log (`oe-mcp-log.json`) with `log_list` and `log_clear` MCP tools
+
+---
+
 ## [v1.6.4] — 2026-08-07
 
 ### Changed
