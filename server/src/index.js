@@ -200,6 +200,44 @@ app.get("/api/features", async (req, res) => {
   } catch { res.json({ kbSharing: false, agentSharing: false, connectorSharing: false }); }
 });
 
+// Sync any new connector types added since last startup (community adapters, new JSON entries).
+// Uses createMany + skipDuplicates — fast single bulk call, never overwrites existing rows.
+async function syncConnectionMasters(db) {
+  try {
+    const all         = require("./data/connectionTypes.json");
+    const adapterDir  = path.join(__dirname, "utils/tools/adapters");
+    const implemented = new Set(fs.readdirSync(adapterDir).map(f => f.replace(".js", "")));
+    const HTTP        = JSON.stringify([
+      { key: "baseUrl", label: "Base URL",            type: "text", required: true,  placeholder: "https://api.example.com/v1" },
+      { key: "headers", label: "Auth Headers (JSON)", type: "json", required: false, placeholder: '{"Authorization":"Bearer YOUR_TOKEN"}' },
+    ]);
+
+    // Fetch existing keys to avoid duplicates (skipDuplicates not supported on all DBs)
+    const existing = new Set(
+      (await db.connectionMaster.findMany({ select: { key: true } })).map(r => r.key)
+    );
+
+    const newEntries = all
+      .filter(t => !existing.has(t.id))
+      .map(t => ({
+        key:         t.id,
+        label:       t.label,
+        category:    t.cat,
+        color:       t.color,
+        initial:     t.initial,
+        adapterType: implemented.has(t.id) ? t.id : "rest-api",
+        fields:      HTTP,
+      }));
+
+    if (newEntries.length > 0) {
+      await db.connectionMaster.createMany({ data: newEntries });
+      console.log(`[Connectors] Auto-synced ${newEntries.length} new connector type(s)`);
+    }
+  } catch (err) {
+    console.warn("[Connectors] Sync skipped:", err.message);
+  }
+}
+
 async function recoverPendingJobs() {
   try {
     const stuck = await prisma.document.findMany({
@@ -245,6 +283,7 @@ if (process.env.NODE_ENV === "production") {
 
 app.listen(PORT, async () => {
   console.log(`Open Enthrium server running on port ${PORT}`);
+  await syncConnectionMasters(prisma);
   await recoverPendingJobs();
   await scheduler.init(prisma);
   try { await require("./telemetry/bootstrap")(prisma); } catch {}

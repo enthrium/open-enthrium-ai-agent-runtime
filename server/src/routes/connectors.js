@@ -30,10 +30,11 @@ function generateSlug(name) {
 // Public-to-all-authenticated: connector type catalog (needed by workspace users too)
 router.get("/connection-masters", authenticate, async (req, res) => {
   try {
+    const { implementedTypes } = require("../utils/tools/registry");
     const masters = await req.db.connectionMaster.findMany({
       orderBy: [{ category: "asc" }, { label: "asc" }],
     });
-    res.json({ masters });
+    res.json({ masters: masters.map(m => ({ ...m, implemented: implementedTypes.has(m.key) })) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

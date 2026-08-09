@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.6.7] — 2026-08-09
+
+### Added
+- **CONTRIBUTING.md**: Simplified guide for adding sample agents and connector adapters
+- Connector adapter auto-discovery — drop a `.js` file in `adapters/`, no registry edits needed
+
+---
+
 ## [v1.6.6] — 2026-08-08
 
 ### Added

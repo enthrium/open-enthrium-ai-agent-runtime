@@ -30,7 +30,7 @@ async function resolveAdapter(workspaceSlug) {
     provider = "lancedb";
   }
 
-  const mod = require(`./adapters/${provider}`);
+  const mod = require(`./rag/${provider}`);
 
   // If workspace has custom config, bind it so callers don't need to pass it
   if (Object.keys(config).length > 0) {

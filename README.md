@@ -356,6 +356,12 @@ OE Agent Runtime is the open-source standalone execution layer of the [Open Enth
 
 ---
 
+## Contributing
+
+→ See **[CONTRIBUTING.md](CONTRIBUTING.md)** for how to add sample agents and connector adapters.
+
+---
+
 ## License
 
 [Apache-2.0](LICENSE) — free to use, modify, and deploy for any purpose, including commercial use.

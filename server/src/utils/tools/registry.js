@@ -1,4 +1,20 @@
-const database       = require("./adapters/database");
+const path = require("path");
+const fs   = require("fs");
+
+// Auto-discover adapters: community contributors only need to drop a .js file
+// into adapters/ — no registry edit required. Filename (sans .js) = type key.
+const _discovered = {};
+for (const file of fs.readdirSync(path.join(__dirname, "adapters"))) {
+  if (!file.endsWith(".js") || file.startsWith("_")) continue;
+  const key = file.slice(0, -3);
+  try {
+    _discovered[key] = require(`./adapters/${key}`);
+  } catch (err) {
+    console.warn(`[registry] Failed to load adapter "${file}": ${err.message}`);
+  }
+}
+
+const database       = _discovered["database"];
 const restApi        = require("./adapters/rest-api");
 const mongodb        = require("./adapters/mongodb");
 const gmail          = require("./adapters/gmail");
@@ -168,21 +184,21 @@ const ADAPTERS = {
   "udio": restApi,
 };
 
+// Resolve a connector type → adapter.
+// Priority: explicit ADAPTERS map → auto-discovered by filename → rest-api fallback.
+function resolve(type) {
+  return ADAPTERS[type] || _discovered[type] || restApi;
+}
+
 function getToolDefinitions(connectors) {
   const tools = [];
-  for (const c of connectors) {
-    const adapter = ADAPTERS[c.type] || restApi;
-    tools.push(...adapter.getToolDefinitions(c));
-  }
+  for (const c of connectors) tools.push(...resolve(c.type).getToolDefinitions(c));
   return tools;
 }
 
 function getAnthropicToolDefinitions(connectors) {
   const tools = [];
-  for (const c of connectors) {
-    const adapter = ADAPTERS[c.type] || restApi;
-    tools.push(...adapter.getAnthropicToolDefinitions(c));
-  }
+  for (const c of connectors) tools.push(...resolve(c.type).getAnthropicToolDefinitions(c));
   return tools;
 }
 
@@ -195,10 +211,10 @@ async function executeTool(toolName, args, connectors, db) {
   const connector   = connectors.find(c => c.id === connectorId);
   if (!connector) return "Connector not found.";
 
-  const adapter = ADAPTERS[connector.type] || restApi;
-  if (!adapter) return `Unsupported connector type: ${connector.type}`;
-
-  return adapter.executeTool(action, args, connector, db);
+  return resolve(connector.type).executeTool(action, args, connector, db);
 }
 
-module.exports = { getToolDefinitions, getAnthropicToolDefinitions, executeTool, ADAPTERS };
+// Set of connector type keys that have a native adapter file (used by the API to mark implemented)
+const implementedTypes = new Set(Object.keys(_discovered));
+
+module.exports = { getToolDefinitions, getAnthropicToolDefinitions, executeTool, ADAPTERS, implementedTypes };
