@@ -4,14 +4,18 @@ const fs   = require("fs");
 // Auto-discover adapters: community contributors only need to drop a .js file
 // into adapters/ — no registry edit required. Filename (sans .js) = type key.
 const _discovered = {};
-for (const file of fs.readdirSync(path.join(__dirname, "adapters"))) {
-  if (!file.endsWith(".js") || file.startsWith("_")) continue;
-  const key = file.slice(0, -3);
-  try {
-    _discovered[key] = require(`./adapters/${key}`);
-  } catch (err) {
-    console.warn(`[registry] Failed to load adapter "${file}": ${err.message}`);
+try {
+  for (const file of fs.readdirSync(path.join(__dirname, "adapters"))) {
+    if (!file.endsWith(".js") || file.startsWith("_")) continue;
+    const key = file.slice(0, -3);
+    try {
+      _discovered[key] = require(`./adapters/${key}`);
+    } catch (err) {
+      console.warn(`[registry] Failed to load adapter "${file}": ${err.message}`);
+    }
   }
+} catch {
+  // Running inside a compiled binary — static ADAPTERS map below handles routing
 }
 
 const database       = _discovered["database"];

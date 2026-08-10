@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.6.8] — 2026-08-10
+
+### Fixed
+- Binary crash on startup — connector registry `fs.readdirSync` wrapped in try/catch; compiled binary falls back to static adapter map cleanly
+
+---
+
 ## [v1.6.7] — 2026-08-09
 
 ### Added
