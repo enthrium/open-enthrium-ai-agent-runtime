@@ -71,7 +71,7 @@
             "run"
           ]
         },
-        "description": "Run an agent by passing YAML inline. Returns { success, output, duration_ms }."
+        "description": "Run an agent by passing YAML inline.\n\nReturns:\n  { success, agent, output, chains, pending_chains, duration_ms }\n\nNote: chains: with relative next_agent paths require /run-file instead (path resolution needs a base directory)."
       }
     },
     {
@@ -106,7 +106,42 @@
             "run-file"
           ]
         },
-        "description": "Run an agent from a YAML file path on the server's disk. Returns { success, output, duration_ms }."
+        "description": "Run an agent from a YAML file path on the server's disk.\n\nReturns:\n  { success, agent, output, chains, pending_chains, duration_ms }\n\n- chains: array of auto-chain results (nested, recursive)\n- pending_chains: array of manual chains awaiting approval via POST /approve-chain"
+      }
+    },
+    {
+      "name": "Approve Chain",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-api-key",
+            "value": "{{api_key}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"chain_id\": \"PASTE_CHAIN_ID_HERE\",\n  \"approved\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/approve-chain",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "approve-chain"
+          ]
+        },
+        "description": "Approve or reject a pending manual chain.\n\nGet the chain_id from pending_chains[] in a /run or /run-file response.\n\nBody:\n  { chain_id: string, approved: boolean }\n\nResponse (approved):\n  { success: true, approved: true, agent, output, chains, pending_chains, duration_ms }\n\nResponse (rejected):\n  { success: true, approved: false, message: \"Chain rejected\" }\n\nNote: chain_id is one-time use — consumed on first call (approved or rejected)."
       }
     },
     {
@@ -146,6 +181,41 @@
               ]
             },
             "description": "Query wallet balances, transactions, and smart contracts\nConnectors: Ethereum (web3)"
+          }
+        },
+        {
+          "name": "Blog to Video Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"yaml\": \"name: Blog to Video Agent\\ndescription: Converts a blog post into a teaching video — fetches content, plans slides, generates images and narration, creates a Canva presentation, and exports an MP4.\\n\\ninstructions: |\\n  You are a teaching video producer. Follow each step exactly and pass outputs\\n  from one step into the next. Do not skip steps or combine them.\\n\\nparams:\\n  - name: blog_url\\n    description: Full URL of the blog post to convert into a video\\n    default: https://www.openenthrium.com/blog/ai-telegram-bot-agent.html\\n\\nllm:\\n  provider: openai\\n  model: gpt-4o\\n\\nconnectors:\\n  - connection_name: Blog\\n    connection_type: restApi\\n  - connection_name: OpenAI\\n    connection_type: restApi\\n  - connection_name: Canva\\n    connection_type: restApi\\n\\nsteps:\\n  - name: Fetch Blog Content\\n    use: Blog\\n    content: |\\n      GET {{blog_url}}\\n      Extract all heading and paragraph text. Return the full article text only — no HTML tags.\\n\\n  - name: Plan Slides\\n    content: |\\n      You are a teaching video scriptwriter. Convert the blog content into exactly 6 slides.\\n      Output a JSON array — one object per slide with these exact keys:\\n      {\\n        \\\"slide_number\\\": 1,\\n        \\\"title\\\": \\\"short slide title (max 8 words)\\\",\\n        \\\"bullets\\\": [\\\"point 1\\\", \\\"point 2\\\", \\\"point 3\\\"],\\n        \\\"narration\\\": \\\"20-30 words spoken aloud for this slide — conversational and clear\\\",\\n        \\\"image_prompt\\\": \\\"detailed DALL-E 3 prompt for a professional, relevant background image\\\"\\n      }\\n      Slide 1 = title and intro. Slides 2-5 = one key concept each. Slide 6 = summary and next steps.\\n      Output only the JSON array, nothing else.\\n\\n  - name: Generate Slide Images\\n    use: OpenAI\\n    content: |\\n      For each of the 6 slides, POST /images/generations with:\\n        model: dall-e-3\\n        prompt: the slide's image_prompt\\n        size: 1792x1024\\n        quality: standard\\n        n: 1\\n      Collect all 6 image URLs in slide order. Return them as a numbered list.\\n\\n  - name: Generate Narration Audio\\n    use: OpenAI\\n    content: |\\n      Join all 6 slide narrations in order into one script, separated by \\\" ... \\\" between slides.\\n      POST /audio/speech with:\\n        model: tts-1\\n        voice: nova\\n        input: the combined narration script\\n      Return the audio file path where it was saved.\\n\\n  - name: Create Canva Presentation\\n    use: Canva\\n    content: |\\n      POST /designs with body:\\n        { \\\"design_type\\\": { \\\"type\\\": \\\"preset\\\", \\\"name\\\": \\\"Presentation\\\" } }\\n      Save the returned design ID. This is the blank presentation to fill with slides.\\n\\n  - name: Upload Images to Canva\\n    use: Canva\\n    content: |\\n      For each of the 6 slide image URLs from step 3, POST /assets with the image URL.\\n      Use name \\\"slide-1.png\\\" through \\\"slide-6.png\\\".\\n      Collect and return all 6 Canva asset IDs in order.\\n\\n  - name: Upload Audio to Canva\\n    use: Canva\\n    content: |\\n      POST /assets to upload the narration audio file saved in step 4.\\n      Use name \\\"narration.mp3\\\". Return the Canva audio asset ID.\\n\\n  - name: Add Slides to Design\\n    use: Canva\\n    content: |\\n      For each of the 6 slides, POST /designs/{designId}/pages:\\n        - Set the slide image asset as the page background\\n        - Add a text element for the slide title\\n        - Add a text element for the bullet points\\n      Add the narration audio as the design audio track.\\n\\n  - name: Export Video\\n    use: Canva\\n    content: |\\n      POST /exports with the design ID and body: { \\\"format\\\": { \\\"type\\\": \\\"mp4\\\" } }\\n      Poll GET /exports/{exportId} every 10 seconds until status is \\\"success\\\".\\n      Return the final MP4 download URL.\\n\\n  - name: Report\\n    content: |\\n      The teaching video is ready. Provide:\\n      - The Canva MP4 download URL\\n      - A summary of each slide title\\n      - Total number of slides and estimated video length\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run"
+              ]
+            },
+            "description": "Converts a blog post into a teaching video — fetches content, plans slides, generates images and narration, creates a Canva presentation, and exports an MP4.\nConnectors: Blog (restApi), OpenAI (restApi), Canva (restApi)"
           }
         },
         {
@@ -779,7 +849,7 @@
           }
         },
         {
-          "name": "Video Creator",
+          "name": "Video Creator Agent",
           "request": {
             "method": "POST",
             "header": [
@@ -794,7 +864,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Video Creator\\r\\ndescription: Generate short video clips from text prompts\\r\\ninstructions: |\\r\\n  You are a video generation agent. Create short video clips using Runway.\\r\\n  Video generation is asynchronous — after submitting, poll for completion before returning the result.\\r\\n  Complete all steps fully before writing your report.\\r\\nsteps:\\r\\n  - name: Design Video Prompt\\r\\n    content: |\\r\\n      Craft a detailed Runway video prompt for a 5-second product reveal clip.\\r\\n      Scene: a sleek smartphone emerging from mist on a dark reflective surface.\\r\\n      Motion: slow upward drift with a rotating reveal.\\r\\n      Style: cinematic, high contrast, blue accent lighting.\\r\\n      Camera: slow push-in, shallow depth of field.\\r\\n\\r\\n  - name: Generate Video\\r\\n    content: |\\r\\n      Submit the prompt to the Runway connector.\\r\\n      POST /image_to_video with body:\\r\\n      {\\r\\n        \\\"promptText\\\": \\\"<video prompt from previous step>\\\",\\r\\n        \\\"model\\\": \\\"gen3a_turbo\\\",\\r\\n        \\\"duration\\\": 5,\\r\\n        \\\"ratio\\\": \\\"1280:720\\\"\\r\\n      }\\r\\n      Save the id from the response.\\r\\n      Poll GET /tasks/<id> every 15 seconds until status is \\\"SUCCEEDED\\\".\\r\\n      Once complete, extract and return the output video URL.\\r\\n\\r\\n  - name: Report\\r\\n    content: |\\r\\n      Summarize the result:\\r\\n      - Prompt used for generation\\r\\n      - Generation time taken\\r\\n      - Output video URL\\r\\n      - Duration and resolution\\r\\nconnectors:\\r\\n  - connection_name: Runway\\r\\n    connection_type: runway\\r\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"yaml\": \"name: Video Creator Agent\\ndescription: Generates a short teaching video on any topic — creates a slide plan, generates images and narration via OpenAI, assembles and exports an MP4 via Canva.\\n\\ninstructions: |\\n  You are a video production agent. Follow each step in order and pass outputs\\n  from one step into the next. Do not skip steps or combine them.\\n\\nparams:\\n  - name: topic\\n    description: The topic or title of the video to create\\n    default: \\\"How AI Agents Work\\\"\\n\\nllm:\\n  provider: openai\\n  model: gpt-4o\\n\\nconnectors:\\n  - connection_name: OpenAI\\n    connection_type: restApi\\n  - connection_name: Canva\\n    connection_type: restApi\\n\\nsteps:\\n  - name: Plan Slides\\n    content: |\\n      You are a teaching video scriptwriter. Create exactly 5 slides for a short video on: {{topic}}\\n      Output a JSON array — one object per slide with these exact keys:\\n      {\\n        \\\"slide_number\\\": 1,\\n        \\\"title\\\": \\\"short slide title (max 8 words)\\\",\\n        \\\"bullets\\\": [\\\"point 1\\\", \\\"point 2\\\", \\\"point 3\\\"],\\n        \\\"narration\\\": \\\"20-30 words spoken aloud for this slide — conversational and clear\\\",\\n        \\\"image_prompt\\\": \\\"detailed DALL-E 3 prompt for a professional, relevant background image\\\"\\n      }\\n      Slide 1 = title and intro. Slides 2-4 = one key concept each. Slide 5 = summary and takeaway.\\n      Output only the JSON array, nothing else.\\n\\n  - name: Generate Slide Images\\n    use: OpenAI\\n    content: |\\n      For each of the 5 slides, POST /images/generations with:\\n        model: dall-e-3\\n        prompt: the slide's image_prompt\\n        size: 1792x1024\\n        quality: standard\\n        n: 1\\n      Collect all 5 image URLs in slide order. Return them as a numbered list.\\n\\n  - name: Generate Narration Audio\\n    use: OpenAI\\n    content: |\\n      Join all 5 slide narrations in order into one script, separated by \\\" ... \\\" between slides.\\n      POST /audio/speech with:\\n        model: tts-1\\n        voice: nova\\n        input: the combined narration script\\n      Return the audio file path where it was saved.\\n\\n  - name: Create Canva Presentation\\n    use: Canva\\n    content: |\\n      POST /designs with body:\\n        { \\\"design_type\\\": { \\\"type\\\": \\\"preset\\\", \\\"name\\\": \\\"Presentation\\\" } }\\n      Save the returned design ID. This is the blank presentation to fill with slides.\\n\\n  - name: Upload Images to Canva\\n    use: Canva\\n    content: |\\n      For each of the 5 slide image URLs from step 2, POST /assets with the image URL.\\n      Use name \\\"slide-1.png\\\" through \\\"slide-5.png\\\".\\n      Collect and return all 5 Canva asset IDs in order.\\n\\n  - name: Upload Audio to Canva\\n    use: Canva\\n    content: |\\n      POST /assets to upload the narration audio file saved in step 3.\\n      Use name \\\"narration.mp3\\\". Return the Canva audio asset ID.\\n\\n  - name: Add Slides to Design\\n    use: Canva\\n    content: |\\n      For each of the 5 slides, POST /designs/{designId}/pages:\\n        - Set the slide image asset as the page background\\n        - Add a text element for the slide title\\n        - Add a text element for the bullet points\\n      Add the narration audio as the design audio track.\\n\\n  - name: Export Video\\n    use: Canva\\n    content: |\\n      POST /exports with the design ID and body: { \\\"format\\\": { \\\"type\\\": \\\"mp4\\\" } }\\n      Poll GET /exports/{exportId} every 10 seconds until status is \\\"success\\\".\\n      Return the final MP4 download URL.\\n\\n  - name: Report\\n    content: |\\n      The video is ready. Provide:\\n      - The Canva MP4 download URL\\n      - A summary of each slide title\\n      - Topic covered and estimated video length\\n\",\n  \"params\": {},\n  \"input\": null\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -810,7 +880,7 @@
                 "run"
               ]
             },
-            "description": "Generate short video clips from text prompts\nConnectors: Runway (runway)"
+            "description": "Generates a short teaching video on any topic — creates a slide plan, generates images and narration via OpenAI, assembles and exports an MP4 via Canva.\nConnectors: OpenAI (restApi), Canva (restApi)"
           }
         },
         {

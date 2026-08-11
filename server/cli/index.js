@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 "use strict";
 
-const fs   = require("fs");
-const path = require("path");
-const yaml = require("js-yaml");
+const fs       = require("fs");
+const path     = require("path");
+const yaml     = require("js-yaml");
+const readline = require("readline");
 
 const engine  = require("../src/engine");
 const VERSION = require("../package.json").version;
@@ -89,9 +90,9 @@ if (args.includes("--serve") || _serverEnabledViaCfg) {
 
 // ── single-run mode ──────────────────────────────────────────────────────────
 
-const agentFile  = args[0];
-let configFile   = "oe-config.json";
-let inputMsg     = null;
+const agentFile   = args[0];
+let   configFile  = "oe-config.json";
+let   inputMsg    = null;
 const paramValues = {};
 
 for (let i = 1; i < args.length; i++) {
@@ -117,8 +118,13 @@ if (!fs.existsSync(configFile)) {
   process.exit(1);
 }
 
-const agentYaml = yaml.load(fs.readFileSync(agentFile, "utf8"));
 const config    = loadConfig(configFile);
+const llmConfig = config.llm;
+
+if (!llmConfig?.provider || !llmConfig?.apiKey) {
+  console.error("\nError: config.json must have { llm: { provider, apiKey, model } }\n");
+  process.exit(1);
+}
 
 // ── connector matching ───────────────────────────────────────────────────────
 // YAML lists connectors by name+type only (no secrets).
@@ -180,55 +186,114 @@ function prepareConnectors(yamlConnectors, configConnectors) {
   });
 }
 
-const connectors = prepareConnectors(agentYaml.connectors, config.connectors);
-const llmConfig  = config.llm;
+// ── manual approval prompt ────────────────────────────────────────────────────
 
-if (!llmConfig?.provider || !llmConfig?.apiKey) {
-  console.error("\nError: config.json must have { llm: { provider, apiKey, model } }\n");
-  process.exit(1);
+function askApproval(agentName) {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(`  Approve? (y/n): `, (answer) => {
+      rl.close();
+      resolve(answer.trim().toLowerCase() === "y");
+    });
+  });
 }
 
-// ── normalise agentSpec ──────────────────────────────────────────────────────
-// YAML fields → engine contract fields
+// ── chain runner ──────────────────────────────────────────────────────────────
 
-const agentSpec = {
-  systemPrompt: agentYaml.systemPrompt || agentYaml.system_prompt || agentYaml.instructions || "",
-  workflow:     agentYaml.steps        || agentYaml.workflow       || [],
-  params:       agentYaml.params       || [],
-  paramValues:  paramValues,
-  maxRounds:    agentYaml.maxRounds    || 25,
-  input:        inputMsg,
-};
+async function runChains(chains, output, currentAgentFile, depth) {
+  const MAX_DEPTH = 5;
+  if (!chains?.length) return;
+  if (depth >= MAX_DEPTH) {
+    console.warn(`\n  ⚠  Max chain depth (${MAX_DEPTH}) reached — stopping`);
+    return;
+  }
 
-// ── run ──────────────────────────────────────────────────────────────────────
+  for (const chain of chains) {
+    const nextAgent   = chain.next_agent   || chain.nextAgent;
+    const triggerType = chain.trigger_type || chain.triggerType || "auto";
 
-const line = "─".repeat(52);
+    if (!nextAgent) continue;
 
-console.log(`\n${line}`);
-console.log(`  🚀   OE Runtime Standalone  v${VERSION}`);
-console.log(`        Run AI agents via CLI`);
-console.log(`${line}`);
-console.log(`\n🤖  ${agentYaml.name || path.basename(agentFile)}`);
-if (agentYaml.description) console.log(`    ${agentYaml.description}`);
-console.log(`\n    LLM        ${llmConfig.provider} / ${llmConfig.model || "default"}`);
-if (connectors.length) {
-  console.log(`    Connectors ${connectors.map(c => `${c.name} (${c.type})`).join(", ")}`);
+    console.log(`\n${"─".repeat(52)}`);
+    console.log(`  🔗  Chain: ${nextAgent}`);
+    console.log(`      Trigger    : ${triggerType}`);
+
+    if (triggerType === "manual") {
+      console.log(`      Output     : ${output.slice(0, 120)}${output.length > 120 ? "…" : ""}`);
+      const approved = await askApproval(nextAgent);
+      if (!approved) {
+        console.log(`  ⏭  Chain rejected\n`);
+        continue;
+      }
+    }
+
+    const nextPath = path.resolve(path.dirname(path.resolve(currentAgentFile)), nextAgent);
+    if (!fs.existsSync(nextPath)) {
+      console.warn(`  ⚠  Chain agent not found: ${nextPath}`);
+      continue;
+    }
+
+    await runAgent(nextPath, output, depth);
+  }
 }
-console.log(`\n${line}\n`);
 
-engine.run(agentSpec, llmConfig, connectors, {
-  onToolCall:   (name)         => console.log(`  🔧  ${name}`),
-  onToolResult: (name, result) => console.log(`      ↳ ${result.slice(0, 300)}${result.length > 300 ? "…" : ""}`),
-  onDone: (output) => {
-    console.log(`\n${line}\n`);
-    console.log(output);
-    console.log("\n✅  Done\n");
-  },
-  onError: (err) => {
-    console.error(`\n❌  ${err.message}\n`);
-    process.exit(1);
-  },
-}).catch(err => {
+// ── agent runner ──────────────────────────────────────────────────────────────
+
+async function runAgent(agentFile, inputContext, depth = 0) {
+  const agentYaml  = yaml.load(fs.readFileSync(agentFile, "utf8"));
+  const connectors = prepareConnectors(agentYaml.connectors, config.connectors);
+
+  const agentSpec = {
+    systemPrompt: agentYaml.systemPrompt || agentYaml.system_prompt || agentYaml.instructions || "",
+    workflow:     agentYaml.steps        || agentYaml.workflow       || [],
+    params:       agentYaml.params       || [],
+    paramValues,
+    maxRounds:    agentYaml.maxRounds    || 25,
+    input:        inputContext
+      ? `Context from previous agent:\n\n${inputContext}\n\nNow execute your task.`
+      : inputMsg,
+  };
+
+  const line = "─".repeat(52);
+
+  console.log(`\n${line}`);
+  if (depth === 0) {
+    console.log(`  🚀   OE Runtime Standalone  v${VERSION}`);
+    console.log(`        Run AI agents via CLI`);
+  } else {
+    console.log(`  🔗   Chained Agent  (depth: ${depth})`);
+  }
+  console.log(`${line}`);
+  console.log(`\n🤖  ${agentYaml.name || path.basename(agentFile)}`);
+  if (agentYaml.description) console.log(`    ${agentYaml.description}`);
+  console.log(`\n    LLM        ${llmConfig.provider} / ${llmConfig.model || "default"}`);
+  if (connectors.length) {
+    console.log(`    Connectors ${connectors.map(c => `${c.name} (${c.type})`).join(", ")}`);
+  }
+  if (agentYaml.chains?.length) {
+    console.log(`    Chains     ${agentYaml.chains.map(c => c.next_agent || c.nextAgent).join(", ")}`);
+  }
+  console.log(`\n${line}\n`);
+
+  const { output } = await engine.run(agentSpec, llmConfig, connectors, {
+    onToolCall:   (name)         => console.log(`  🔧  ${name}`),
+    onToolResult: (name, result) => console.log(`      ↳ ${result.slice(0, 300)}${result.length > 300 ? "…" : ""}`),
+    onError:      (err)          => { throw err; },
+  });
+
+  console.log(`\n${line}\n`);
+  console.log(output);
+  console.log(`\n✅  Done${depth > 0 ? ` — ${agentYaml.name || path.basename(agentFile)}` : ""}\n`);
+
+  // Process chains after this agent completes
+  await runChains(agentYaml.chains, output, agentFile, depth + 1);
+
+  return output;
+}
+
+// ── kick off ──────────────────────────────────────────────────────────────────
+
+runAgent(agentFile, null, 0).catch(err => {
   console.error(`\nFatal: ${err.message}\n`);
   process.exit(1);
 });

@@ -1,15 +1,6 @@
 const { createLLMClient }                                         = require("./llm");
-const { buildSystemPrompt }                                       = require("./promptBuilder");
+const { buildSystemPrompt, applyParams }                          = require("./promptBuilder");
 const { getToolDefinitions, getAnthropicToolDefinitions, executeTool } = require("../utils/tools/registry");
-
-function applyParams(template, paramDefs, paramValues) {
-  let result = template || "";
-  for (const p of (paramDefs || [])) {
-    const val = String(paramValues?.[p.name] ?? p.default ?? "");
-    result = result.split(`{{${p.name}}}`).join(val);
-  }
-  return result;
-}
 
 function conditionMet(condition, output) {
   switch (condition) {

@@ -25,6 +25,7 @@ Open Enthrium AI Agent Runtime (OE Runtime) is a standalone, cross-platform bina
 - **No LangChain. No Python. No code.** Agents are plain YAML files.
 - **No install.** Single binary for Windows, Linux, and macOS. No Node.js, no Docker on the target machine.
 - **45+ connector categories.** PostgreSQL, MySQL, MongoDB, S3, Slack, GitHub, SSH, REST API, Kafka, and more — all built in.
+- **Agent chains.** Chain agents together in YAML — auto chains fire in sequence; manual chains pause for human approval in CLI (y/n prompt), HTTP (`/approve-chain`), or any MCP-enabled AI chat (`approve_chain` tool).
 - **HTTP server mode.** `--serve` turns the runtime into a persistent API server any app can call.
 - **Self-hosted.** Runs entirely on your own machine. No call-home. Own your data.
 
@@ -125,6 +126,17 @@ connectors:
 | `connectors` | No | Connector references matched to credentials in `oe-config.json` |
 | `steps` | No | Named workflow steps injected sequentially into the system prompt |
 | `maxRounds` | No | Max LLM tool-call iterations (default: 25) |
+| `chains` | No | Agents to run after this one completes — see Agent Chains below |
+
+**`chains` syntax:**
+```yaml
+chains:
+  - next_agent: ./followup.yaml     # relative path from this agent file
+    trigger_type: auto              # fires immediately, output passed as context
+
+  - next_agent: ./notify.yaml
+    trigger_type: manual            # CLI: y/n prompt · HTTP: /approve-chain · MCP: approve_chain tool
+```
 
 **3. Run it**
 
@@ -224,15 +236,7 @@ All endpoints require the `x-api-key` header when `server.apiKey` is set in your
 | `GET` | `/health` | Liveness check — returns `{ "status": "ok", "version": "..." }` |
 | `POST` | `/run` | Run an agent from an inline YAML string |
 | `POST` | `/run-file` | Run an agent from a YAML file path on disk |
-
-**POST /run** — body:
-```json
-{
-  "yaml": "name: Hi\nsteps:\n  - name: Greet\n    content: Say hi!",
-  "params": {},
-  "input": "Run"
-}
-```
+| `POST` | `/approve-chain` | Approve or reject a pending manual chain |
 
 **POST /run-file** — body:
 ```json
@@ -245,7 +249,27 @@ All endpoints require the `x-api-key` header when `server.apiKey` is set in your
 
 **Response** (both /run and /run-file):
 ```json
-{ "success": true, "output": "...", "duration_ms": 1234 }
+{
+  "success": true,
+  "output": "Agent output...",
+  "chains": [
+    { "agent": "Follow-up Agent", "output": "Chain complete ✅", "chains": [], "pending_chains": [] }
+  ],
+  "pending_chains": [
+    { "chain_id": "abc123xyz", "next_agent": "./notify.yaml", "output_preview": "Agent output..." }
+  ],
+  "duration_ms": 1234
+}
+```
+
+**POST /approve-chain** — approve or reject a manual chain:
+```json
+{ "chain_id": "abc123xyz", "approved": true }
+```
+
+Response:
+```json
+{ "success": true, "approved": true, "output": "...", "chains": [], "pending_chains": [], "duration_ms": 890 }
 ```
 
 **Example curl:**
@@ -253,17 +277,17 @@ All endpoints require the `x-api-key` header when `server.apiKey` is set in your
 # Health check
 curl http://localhost:3333/health -H "x-api-key: your-secret"
 
-# Run inline agent
-curl -X POST http://localhost:3333/run \
-  -H "x-api-key: your-secret" \
-  -H "Content-Type: application/json" \
-  -d '{"yaml":"name: Hi\nsteps:\n  - name: Greet\n    content: Say hi!","input":"Run"}'
-
-# Run agent from file
+# Run agent from file (with chain support)
 curl -X POST http://localhost:3333/run-file \
   -H "x-api-key: your-secret" \
   -H "Content-Type: application/json" \
-  -d '{"file":"/path/to/agent.yaml","params":{"topic":"AI trends"},"input":"Run"}'
+  -d '{"file":"/path/to/agent.yaml"}'
+
+# Approve a pending manual chain
+curl -X POST http://localhost:3333/approve-chain \
+  -H "x-api-key: your-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"chain_id":"abc123xyz","approved":true}'
 ```
 
 ---

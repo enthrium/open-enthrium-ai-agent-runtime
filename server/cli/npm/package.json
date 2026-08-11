@@ -1,6 +1,6 @@
 {
     "name": "@openenthrium/oe-runtime",
-    "version": "1.6.8",
+    "version": "1.6.9",
     "description": "OE Runtime - run AI agents against enterprise data sources. One binary, one YAML agent, one config file.",
     "homepage": "https://www.openenthrium.com/runtime.html",
     "repository": {

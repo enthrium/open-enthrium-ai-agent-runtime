@@ -1,13 +1,13 @@
 /**
- * Build the full system prompt from a plain agentSpec object.
+ * Build the full system prompt from an agentSpec or a DB agent object.
  *
- * agentSpec: {
- *   systemPrompt: string,
- *   workflow: [{ name: string, content: string }]   ← already a parsed array
- * }
+ * Accepts workflow as either:
+ *   - a parsed array  [{ name, content }]  (agentSpec from CLI / engine)
+ *   - a JSON string   "[{...}]"            (DB agent from Platform routes)
  */
 function buildSystemPrompt(agentSpec) {
-  const steps = agentSpec.workflow || [];
+  const raw   = agentSpec.workflow ?? agentSpec.steps ?? [];
+  const steps = typeof raw === "string" ? JSON.parse(raw || "[]") : raw;
 
   const todayDate  = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const dateHeader = `SYSTEM: Today's date is ${todayDate}. Use this exact date whenever instructions say "today's date" or "TODAY".`;
@@ -26,4 +26,13 @@ function buildSystemPrompt(agentSpec) {
   return parts.join("\n\n");
 }
 
-module.exports = { buildSystemPrompt };
+function applyParams(template, paramDefs, paramValues) {
+  let result = template || "";
+  for (const p of (paramDefs || [])) {
+    const val = String(paramValues?.[p.name] ?? p.default ?? "");
+    result = result.split(`{{${p.name}}}`).join(val);
+  }
+  return result;
+}
+
+module.exports = { buildSystemPrompt, applyParams };

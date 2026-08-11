@@ -162,4 +162,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add runtime.html
           git diff --cached --quiet || git commit -m "chore: update OE Runtime download links to ${VERSION}"
+          git pull --rebase
           git push

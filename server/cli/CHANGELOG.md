@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.6.9] — 2026-08-11
+
+### Added
+- **`chains:` support (CLI mode)**: after an agent completes, fire one or more follow-up agents defined in `chains:` — each chain has `next_agent` (relative path), `condition` (always / on_success / on_critical / on_warning), and `trigger_type` (auto or manual); auto chains execute immediately with the parent's output passed as context; manual chains pause for a `y/n` terminal prompt before running; max depth 5
+- **`chains:` support (server mode)**: `POST /run` and `POST /run-file` now resolve and fire auto chains inline, returning results nested under `chains[]`; manual chains return `pending_chains[]` with a `chain_id`; new `POST /approve-chain` endpoint — send `{ chain_id, approved: true/false }` to approve or reject; approved chains run and return their full result including any further nested chains; `chain_id` is single-use
+- **Postman collection updated**: `/approve-chain` request added; `/run` and `/run-file` descriptions updated; regenerated with `scripts/generate-postman.js`
+
+---
+
 ## [v1.6.8] — 2026-08-10
 
 ### Fixed
