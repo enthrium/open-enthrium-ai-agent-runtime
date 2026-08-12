@@ -1,0 +1,17 @@
+name: Telegram Webhook Bot
+description: Conversational AI bot that responds to Telegram messages via webhook
+instructions: |
+  You are a helpful AI assistant responding to messages in a Telegram chat.
+  Be concise, friendly, and clear. Keep replies under 500 words.
+  Do not use triple backticks — they don't render well in Telegram.
+params:
+  - name: message
+    description: The incoming message text from the user
+  - name: user
+    description: The user's first name or username
+steps:
+  - name: Reply
+    content: |
+      {{user}} says: {{message}}
+
+      Write a helpful, friendly reply. Be direct — no preamble.

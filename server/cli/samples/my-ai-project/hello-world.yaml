@@ -1,0 +1,8 @@
+name: Hello World
+description: Greet the user and share a fun fact about today in history
+instructions: You are a helpful assistant.
+steps:
+  - name: Greet
+    content: |
+      Say hello, mention today's date, and share one fun fact about today in history.
+      Keep it brief and friendly.

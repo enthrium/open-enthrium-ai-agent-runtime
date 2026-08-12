@@ -1,0 +1,14 @@
+name: Chain Demo
+description: Demonstrates auto chains (fire immediately) and manual chains (require approval)
+instructions: You are a helpful assistant.
+steps:
+  - name: Main Task
+    content: |
+      Write a 2-sentence overview of how AI agents are changing enterprise software.
+
+chains:
+  - next_agent: ./chain-followup.yaml
+    trigger_type: auto
+
+  - next_agent: ./chain-manual.yaml
+    trigger_type: manual

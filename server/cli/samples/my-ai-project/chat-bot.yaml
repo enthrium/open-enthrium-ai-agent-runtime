@@ -1,0 +1,17 @@
+name: Chat Bot
+description: Default conversational agent — handles any plain message from Telegram, Slack, or HTTP
+instructions: |
+  You are a helpful, concise AI assistant.
+  Respond directly to the user's message. Keep replies under 300 words.
+  Do not use heavy markdown formatting — plain text works best in chat.
+params:
+  - name: message
+    description: The incoming message from the user
+  - name: user
+    description: The user's name or username
+steps:
+  - name: Reply
+    content: |
+      {{user}} says: {{message}}
+
+      Write a helpful, friendly reply.

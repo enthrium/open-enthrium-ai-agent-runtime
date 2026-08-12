@@ -1,0 +1,14 @@
+name: Chain Starter
+description: Primary agent that chains to a follow-up (auto) and a review step (manual approval)
+instructions: You are a helpful assistant. Complete your task clearly and concisely.
+steps:
+  - name: Main Task
+    content: |
+      Write a short 3-sentence summary about the benefits of AI agents in enterprise workflows.
+
+chains:
+  - next_agent: ./chain-followup.yaml
+    trigger_type: auto
+
+  - next_agent: ./chain-manual.yaml
+    trigger_type: manual

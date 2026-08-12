@@ -1,0 +1,12 @@
+name: Chain Manual Review
+description: Manual chain — only runs after human approval (y/n in CLI, YES/NO in chat, /approve-chain via HTTP)
+instructions: You are a helpful assistant.
+steps:
+  - name: Review
+    content: |
+      You have been approved to run. The previous context was:
+
+      {{ input }}
+
+      Write a one-paragraph executive summary suitable for a senior stakeholder.
+      End with "Manual approval chain complete ✅".

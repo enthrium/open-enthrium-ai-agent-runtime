@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.7.0] — 2026-08-12
+
+### Added
+- **`oe-project.json` — Project system**: a new project definition file (sits alongside `oe-config.json`) that registers agents by name, sets a default agent, and links to other projects; fields: `name`, `version`, `description`, `author`, `license`, `tags`, `agents[]` (`name`, `file`, `description`, `default`), `links[]` (`name`, `project`)
+- **`server.webhook` config block**: add `"webhook": { "enabled": true, "auto_reply": true }` inside the `server` block to enable the webhook receiver; messaging connectors (telegram, slack) stay as credentials-only entries in `connectors[]` — clean separation of concerns; `auto_reply: true` makes OE Runtime automatically send agent output back to the user
+- **Webhook receiver** (`POST /webhook/telegram`, `POST /webhook/slack`, `POST /webhook/github`): OE Runtime's HTTP server now receives incoming messages from any platform and routes them through the project's agent registry — no separate listener process needed
+- **Universal command language**: every interface (Telegram, Slack, Teams, HTTP, MCP) speaks the same commands — `/run <name>`, `/run <path>`, `/agents`, `/approve`, `/cancel`, `/status`, `/projects`, `/help`; plain text routes to the `"default": true` agent
+- **`POST /command`** endpoint: HTTP clients send the same commands as chat users — `{ text: "/run chain-test" }`; returns `{ reply }` — same parser, same agent runner
+- **`GET /status`** endpoint: returns version, uptime, LLM config, connector list, and project info as JSON; `/status` from any chat platform returns a formatted human-readable health check
+- **Manual chain approval via chat**: when a chain has `trigger_type: manual`, OE Runtime sends an approval prompt to the chat user; user replies `YES` or `NO`; per-`chat_id` state is tracked so multiple users can have independent pending approvals simultaneously
+- **Telegram auto-registration**: on startup, OE Runtime calls `setWebhook` automatically using the bot token; manual `curl` fallback printed when `publicUrl` is not set
+- **Slack URL verification**: `POST /webhook/slack` responds to Slack's `url_verification` challenge automatically
+- **Bug fix**: removed stale `condition` variable reference from `pending_chains` push (was `ReferenceError` at runtime on manual chain trigger)
+
+---
+
 ## [v1.6.9] — 2026-08-11
 
 ### Added

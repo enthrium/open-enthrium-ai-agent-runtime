@@ -1,0 +1,31 @@
+{
+  "name": "My AI Project",
+  "version": "1.0.0",
+  "description": "A multi-agent project accessible from Telegram, Slack, HTTP, and MCP",
+  "author": "Your Name",
+  "tags": ["automation", "agents"],
+
+  "agents": [
+    {
+      "name": "hello",
+      "file": "./hello-world.yaml",
+      "description": "Greet and share a fun fact"
+    },
+    {
+      "name": "summary",
+      "file": "./summariser.yaml",
+      "description": "Summarise any topic in 3 bullet points"
+    },
+    {
+      "name": "chain-demo",
+      "file": "./chain-agent.yaml",
+      "description": "Demo agent with auto and manual chains"
+    },
+    {
+      "name": "chat",
+      "file": "./chat-bot.yaml",
+      "description": "Conversational assistant — default for all messages",
+      "default": true
+    }
+  ]
+}

@@ -27,15 +27,19 @@ Open Enthrium AI Agent Runtime (OE Runtime) is a standalone, cross-platform bina
 - **45+ connector categories.** PostgreSQL, MySQL, MongoDB, S3, Slack, GitHub, SSH, REST API, Kafka, and more — all built in.
 - **Agent chains.** Chain agents together in YAML — auto chains fire in sequence; manual chains pause for human approval in CLI (y/n prompt), HTTP (`/approve-chain`), or any MCP-enabled AI chat (`approve_chain` tool).
 - **HTTP server mode.** `--serve` turns the runtime into a persistent API server any app can call.
+- **Messaging platform integration.** Receive messages from Telegram, Slack, WhatsApp, Teams and run agents in response — same YAML agents, same connectors, universal command language (`/run`, `/agents`, `/approve`, `/status`).
+- **Project system.** `oe-project.json` registers multiple agents by name, sets a default agent, and links projects together — one config, many agents.
 - **Self-hosted.** Runs entirely on your own machine. No call-home. Own your data.
 
 ---
 
 ## Sample Library
 
-Download [oe-runtime-samples.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) for 21 ready-to-run starter kits — each with a complete `agent.yaml` + `oe-config.json`:
+Download [oe-runtime-samples.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) for 24 ready-to-run starter kits — each with a complete `agent.yaml` + `oe-config.json`:
 
-`sql-databases` · `nosql-cache` · `file-storage` · `cloud-drives` · `email` · `team-messaging` · `telegram` · `productivity-crm` · `rest-api` · `graphql` · `ssh` · `message-queues` · `iot-messaging` · `web-search` · `ocr-vision` · `image-generation` · `speech-audio` · `video-generation` · `music-generation` · `blockchain-web3` · `directory-identity`
+**Getting started** — `hello-world` · `chains` · `my-ai-project`
+
+**By connector** — `sql-databases` · `nosql-cache` · `file-storage` · `cloud-drives` · `email` · `team-messaging` · `telegram` · `productivity-crm` · `rest-api` · `graphql` · `ssh` · `message-queues` · `iot-messaging` · `web-search` · `ocr-vision` · `image-generation` · `speech-audio` · `video-generation` · `music-generation` · `blockchain-web3` · `directory-identity`
 
 ---
 
@@ -222,7 +226,7 @@ oe-runtime-win.exe --serve --config oe-config.json
 # macOS
 ./oe-runtime-macos --serve --config oe-config.json
 
-# 🚀  OE Runtime Server  v1.6.1
+# 🚀  OE Runtime Server  v1.7.0
 #      Run AI agents via HTTP
 # Listening  http://localhost:3333
 ```
@@ -234,9 +238,13 @@ All endpoints require the `x-api-key` header when `server.apiKey` is set in your
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/health` | Liveness check — returns `{ "status": "ok", "version": "..." }` |
+| `GET` | `/status` | Health + project info + connector list + uptime |
+| `POST` | `/command` | Universal command endpoint — `{ "text": "/run agent-name" }` |
 | `POST` | `/run` | Run an agent from an inline YAML string |
 | `POST` | `/run-file` | Run an agent from a YAML file path on disk |
 | `POST` | `/approve-chain` | Approve or reject a pending manual chain |
+| `POST` | `/webhook/telegram` | Telegram webhook receiver (enabled via `server.webhook`) |
+| `POST` | `/webhook/slack` | Slack webhook receiver (enabled via `server.webhook`) |
 
 **POST /run-file** — body:
 ```json
@@ -289,6 +297,96 @@ curl -X POST http://localhost:3333/approve-chain \
   -H "Content-Type: application/json" \
   -d '{"chain_id":"abc123xyz","approved":true}'
 ```
+
+---
+
+## Project System
+
+`oe-project.json` sits alongside `oe-config.json` and registers multiple agents by name — so any interface (Telegram, Slack, HTTP, MCP) can invoke them by name rather than file path.
+
+```json
+{
+  "name": "Sales Pipeline",
+  "version": "1.0.0",
+  "description": "Outbound sales automation",
+  "author": "Your Name",
+  "tags": ["sales", "outbound"],
+  "agents": [
+    { "name": "prospecting",  "file": "./prospecting.yaml",  "description": "Find and qualify leads" },
+    { "name": "outreach",     "file": "./outreach.yaml",     "description": "Send personalised emails" },
+    { "name": "chat",         "file": "./chat-bot.yaml",     "description": "Conversational assistant", "default": true }
+  ],
+  "links": [
+    { "name": "support", "project": "../support-project/oe-project.json" }
+  ]
+}
+```
+
+| Field | Description |
+|---|---|
+| `name`, `version`, `author`, `tags` | Project metadata |
+| `agents[].name` | Short name used to invoke the agent (`/run prospecting`) |
+| `agents[].file` | Path to the YAML agent file (relative to `oe-project.json`) |
+| `agents[].default` | `true` — runs this agent when user sends a plain message (no command) |
+| `links` | Cross-project references — run agents from linked projects |
+
+See the [`my-ai-project`](samples/my-ai-project/) sample for a full working example.
+
+---
+
+## Messaging Platforms (Telegram, Slack, WhatsApp, Teams)
+
+OE Runtime's HTTP server can receive messages from any webhook-based messaging platform and run agents in response — no separate bot framework needed.
+
+**`oe-config.json` — enable webhook receiver:**
+
+```json
+{
+  "llm": { "provider": "openai", "apiKey": "sk-...", "model": "gpt-4o" },
+  "server": {
+    "enabled": true,
+    "port": 3333,
+    "publicUrl": "https://your-public-domain.com",
+    "webhook": {
+      "enabled": true,
+      "auto_reply": true
+    }
+  },
+  "connectors": [
+    {
+      "connection_name": "My Telegram Bot",
+      "connection_type": "telegram",
+      "baseUrl": "https://api.telegram.org/botYOUR_BOT_TOKEN"
+    }
+  ]
+}
+```
+
+OE Runtime automatically calls Telegram's `setWebhook` on startup. For Slack, paste the URL shown in the terminal into your Slack app's Event Subscriptions.
+
+**Universal command language** — same commands work from Telegram, Slack, HTTP, or MCP:
+
+| Command | Action |
+|---|---|
+| `/run <name>` | Run agent by name (from `oe-project.json`) |
+| `/run <path>` | Run agent by file path |
+| `/agents` | List all registered agents |
+| `/approve` | Approve a pending manual chain |
+| `/cancel` | Cancel a pending chain |
+| `/status` | Health check — LLM, connectors, uptime |
+| `/help` | Show all commands |
+| Any message | Runs the `"default": true` agent |
+
+**Supported platforms:**
+
+| Platform | Webhook endpoint | Auto-registers |
+|---|---|---|
+| Telegram | `POST /webhook/telegram` | ✅ Yes — calls `setWebhook` on startup |
+| Slack | `POST /webhook/slack` | No — paste URL in Slack Event Subscriptions |
+| WhatsApp (Meta) | `POST /webhook/whatsapp` | No — paste URL in Meta Developer dashboard |
+| GitHub | `POST /webhook/github` | No — paste URL in repo webhook settings |
+
+See the [`telegram`](samples/telegram/) sample for a full working example.
 
 ---
 
@@ -348,23 +446,6 @@ All other connectors (PostgreSQL, MySQL, MongoDB, Redis, S3, Slack, GitHub, REST
 ## Supported LLM Providers
 
 `openai` · `anthropic` · `azure` · `groq` · `gemini` · `ollama` · `mistral` · `deepseek` · `together` · `fireworks` · `bedrock` · and more
-
----
-
-## Contributing
-
-Contributions are welcome. Before opening a PR:
-
-- [Open an issue](https://github.com/enthrium/open-enthrium-ai-agent-runtime/issues/new) to discuss the change — especially for new features
-- Fork the repository and branch from `main`
-- Test your changes locally
-- [Open a PR](https://github.com/enthrium/open-enthrium-ai-agent-runtime/compare) with a clear description of what and why
-
-Where contributions are most valuable:
-
-- New connector adapters (`server/src/utils/tools/adapters/`)
-- Agent YAML examples for the community marketplace
-- Bug fixes with clear reproduction steps
 
 ---
 

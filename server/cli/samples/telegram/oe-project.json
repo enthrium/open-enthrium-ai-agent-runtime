@@ -1,0 +1,20 @@
+{
+  "name": "Telegram Bot",
+  "version": "1.0.0",
+  "description": "Conversational AI bot accessible from Telegram",
+  "tags": ["telegram", "chatbot"],
+
+  "agents": [
+    {
+      "name": "chat",
+      "file": "./webhook-bot.yaml",
+      "description": "Conversational assistant — default for all messages",
+      "default": true
+    },
+    {
+      "name": "notifier",
+      "file": "./agent.yaml",
+      "description": "Read recent Telegram messages and send a summary notification"
+    }
+  ]
+}

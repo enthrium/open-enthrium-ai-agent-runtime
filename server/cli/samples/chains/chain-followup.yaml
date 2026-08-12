@@ -1,0 +1,11 @@
+name: Chain Follow-up
+description: Auto chain — fires immediately after the primary agent completes
+instructions: You are a helpful assistant.
+steps:
+  - name: Follow Up
+    content: |
+      The previous agent produced this output:
+
+      {{ input }}
+
+      Summarise the key points in bullet form and add "Chain complete ✅" at the end.

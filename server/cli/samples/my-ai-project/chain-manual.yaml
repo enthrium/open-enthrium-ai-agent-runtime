@@ -1,0 +1,12 @@
+name: Chain Manual Review
+description: Manual chain — only runs after explicit approval
+instructions: You are a helpful assistant.
+steps:
+  - name: Review
+    content: |
+      You have been approved to proceed. Previous context:
+
+      {{ input }}
+
+      Write a one-paragraph executive summary for a senior stakeholder.
+      End with "Manual approval chain complete ✅".

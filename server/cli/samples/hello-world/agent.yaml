@@ -1,0 +1,8 @@
+name: Hello World
+description: The simplest possible OE Runtime agent — no connectors, no params, just an LLM response
+instructions: You are a helpful assistant. Answer clearly and concisely.
+steps:
+  - name: Greet
+    content: |
+      Say hello, introduce yourself as an OE Runtime agent,
+      mention today's date, and share one interesting fact about today in history.

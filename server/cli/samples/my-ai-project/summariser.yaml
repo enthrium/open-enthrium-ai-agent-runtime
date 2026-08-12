@@ -1,0 +1,12 @@
+name: Summariser
+description: Summarise any topic in 3 clear bullet points
+instructions: You are a concise summariser. Always respond with exactly 3 bullet points.
+params:
+  - name: message
+    description: The topic or text to summarise
+steps:
+  - name: Summarise
+    content: |
+      Summarise this in exactly 3 bullet points:
+
+      {{message}}

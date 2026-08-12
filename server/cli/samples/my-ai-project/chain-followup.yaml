@@ -1,0 +1,11 @@
+name: Chain Follow-up
+description: Auto chain — fires immediately, summarises previous agent output
+instructions: You are a helpful assistant.
+steps:
+  - name: Summarise
+    content: |
+      The previous agent produced this output:
+
+      {{ input }}
+
+      List the 3 key takeaways as bullet points. End with "Auto chain complete ✅".
