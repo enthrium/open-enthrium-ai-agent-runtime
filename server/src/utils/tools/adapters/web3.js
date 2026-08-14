@@ -5,7 +5,19 @@ function rpc(url, method, params = []) {
   return axios.post(url, { jsonrpc: "2.0", id: _id++, method, params }, { timeout: 30000 });
 }
 
+function getConnectorConfig(connector) {
+  const cfg  = connector.config     ? JSON.parse(connector.config)     : {};
+  const auth = connector.authConfig ? JSON.parse(connector.authConfig) : {};
+  return { ...auth, ...cfg };
+}
+
 function getToolDefinitions(connector) {
+  const cfg            = getConnectorConfig(connector);
+  const defaultAddress = cfg.walletAddress || null;
+  const addrHint       = defaultAddress
+    ? ` Defaults to the configured wallet address (${defaultAddress}) if omitted.`
+    : "";
+
   return [
     {
       type: "function",
@@ -26,13 +38,13 @@ function getToolDefinitions(connector) {
       type: "function",
       function: {
         name: `conn_${connector.id}_get_balance`,
-        description: `Get the native token balance of an address on "${connector.name}".`,
+        description: `Get the native token balance of an address on "${connector.name}".${addrHint}`,
         parameters: {
           type: "object",
           properties: {
-            address: { type: "string", description: "Wallet address" },
+            address: { type: "string", description: `Wallet address.${addrHint}` },
           },
-          required: ["address"],
+          required: [],
         },
       },
     },
@@ -62,10 +74,11 @@ function getAnthropicToolDefinitions(connector) {
 }
 
 async function executeTool(action, args, connector) {
-  const cfg  = connector.config    ? JSON.parse(connector.config)    : {};
-  const auth = connector.authConfig ? JSON.parse(connector.authConfig) : {};
+  const cfg  = getConnectorConfig(connector);
 
-  const rpcUrl = cfg.baseUrl || auth.baseUrl || auth.rpcUrl || cfg.rpcUrl || "";
+  const rpcUrl        = cfg.baseUrl || cfg.rpcUrl || "";
+  const defaultWallet = cfg.walletAddress || null;
+
   if (!rpcUrl) return "Web3 RPC URL (baseUrl) not configured.";
 
   try {
@@ -75,12 +88,14 @@ async function executeTool(action, args, connector) {
       return JSON.stringify(res.data.result, null, 2);
     }
     if (action === "get_balance") {
-      const res = await rpc(rpcUrl, "eth_getBalance", [args.address, "latest"]);
+      const address = args.address || defaultWallet;
+      if (!address) return "No wallet address provided and none configured in the connector (walletAddress).";
+      const res = await rpc(rpcUrl, "eth_getBalance", [address, "latest"]);
       if (res.data.error) return `RPC error: ${JSON.stringify(res.data.error)}`;
       const hex = res.data.result;
       const wei = BigInt(hex);
       const eth = Number(wei) / 1e18;
-      return `Balance: ${hex} wei (${eth.toFixed(6)} ETH)`;
+      return `Balance of ${address}: ${hex} wei (${eth.toFixed(6)} ETH)`;
     }
     if (action === "get_block") {
       const res = await rpc(rpcUrl, "eth_getBlockByNumber", [args.block || "latest", false]);

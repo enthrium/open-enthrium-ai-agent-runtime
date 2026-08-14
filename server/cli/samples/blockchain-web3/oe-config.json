@@ -13,7 +13,8 @@
     {
       "connection_name": "Ethereum",
       "connection_type": "web3",
-      "baseUrl": "https://eth.llamarpc.com"
+      "baseUrl": "https://ethereum.publicnode.com",
+      "walletAddress": "0xYOUR_WALLET_ADDRESS"
     }
   ]
 }

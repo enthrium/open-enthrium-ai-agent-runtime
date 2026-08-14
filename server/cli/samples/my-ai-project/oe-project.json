@@ -13,8 +13,8 @@
     },
     {
       "name": "summary",
-      "file": "./summariser.yaml",
-      "description": "Summarise any topic in 3 bullet points"
+      "file": "./summary.yaml",
+      "description": "Summarise AI Trends in 2026 in 3 bullet points"
     },
     {
       "name": "chain-demo",

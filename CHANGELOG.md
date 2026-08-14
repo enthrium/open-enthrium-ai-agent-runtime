@@ -5,6 +5,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.7.2] — 2026-08-14
+
+### Fixed
+- **sync-cli.yml**: Postman collection generation step now has `|| true` fallback — prevents sync workflow failure when `js-yaml` is not yet installed on the CI runner, which was blocking the tag push to `open-enthrium-ai-agent-runtime` and causing the entire release pipeline to skip
+- **release.yml**: Postman generation now calls `node cli/generate-postman.js` directly instead of `yarn generate:postman` (which pointed to the wrong script path)
+
+---
+
+## [v1.7.1] — 2026-08-13
+
+### Added
+- **Postman collection auto-generation**: new `generate-postman.js` script reads all `samples/*/agent.yaml` files and generates `oe-runtime.postman_collection.json` at release time; wired into `sync-cli.yml` so the collection is always up to date with the latest samples
+
+### Changed
+- **`blockchain-web3` sample**: simplified agent to a single step; switched RPC endpoint to `ethereum.publicnode.com` (no API key required); added `walletAddress` placeholder to `oe-config.json`
+
+### Fixed
+- **Web3 adapter** (`adapters/web3.js`): now reads `walletAddress` from connector config and falls back to it when no address is passed in the tool call — the `get_balance` tool no longer requires an explicit address argument if a default is configured
+
+---
+
 ## [v1.7.0] — 2026-08-12
 
 ### Added

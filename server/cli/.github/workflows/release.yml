@@ -83,7 +83,7 @@ jobs:
 
       - name: Generate Postman collection from samples
         working-directory: server
-        run: yarn generate:postman
+        run: node cli/generate-postman.js
 
       - name: Zip sample library
         run: cd server/cli && zip -r oe-runtime-samples.zip samples/

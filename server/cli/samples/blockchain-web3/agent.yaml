@@ -1,27 +1,11 @@
 name: Blockchain Agent
-description: Query wallet balances, transactions, and smart contracts
+description: Check ETH wallet balance
 instructions: |
-  You are a blockchain data agent. Query wallet balances, transaction history,
-  token holdings, and smart contract state on Ethereum and EVM-compatible chains.
-  Complete all steps fully before writing your report.
+  You are a blockchain data agent. Use the tools to fetch data and respond concisely.
 steps:
-  - name: Fetch Wallet Data
+  - name: Check Balance
     content: |
-      Query the latest block number and get the ETH balance for the wallet address configured in the connector.
-      Also fetch the last 5 transactions for that wallet.
-  - name: Analyze Transactions
-    content: |
-      For each of the 5 transactions retrieved:
-      - Identify direction (sent / received)
-      - Convert value from Wei to ETH
-      - Note the counterparty address and timestamp
-  - name: Report
-    content: |
-      Produce a wallet summary:
-      - Current ETH balance
-      - Total sent vs received across the 5 transactions
-      - Most recent transaction details
-      - Any unusual patterns (large transfers, repeated counterparties)
+      Get the ETH balance for the configured wallet address. Report the address and balance in ETH. Nothing else.
 connectors:
   - connection_name: Ethereum
     connection_type: web3

@@ -347,16 +347,24 @@ OE Runtime's HTTP server can receive messages from any webhook-based messaging p
     "enabled": true,
     "port": 3333,
     "publicUrl": "https://your-public-domain.com",
-    "webhook": {
-      "enabled": true,
-      "auto_reply": true
-    }
+    "webhook": true
   },
   "connectors": [
     {
       "connection_name": "My Telegram Bot",
       "connection_type": "telegram",
-      "baseUrl": "https://api.telegram.org/botYOUR_BOT_TOKEN"
+      "baseUrl": "https://api.telegram.org/botYOUR_BOT_TOKEN",
+      "auto_reply": true,
+      "rate_limit": { "messages_per_minute": 20 },
+      "history": { "enabled": true, "max_messages": 10 }
+    },
+    {
+      "connection_name": "My Slack Bot",
+      "connection_type": "slack",
+      "botToken": "xoxb-YOUR-BOT-TOKEN",
+      "auto_reply": true,
+      "rate_limit": { "messages_per_minute": 10 },
+      "history": { "enabled": true, "max_messages": 10 }
     }
   ]
 }

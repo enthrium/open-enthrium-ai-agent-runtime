@@ -1,0 +1,7 @@
+name: summary
+description: Summarise AI Trends in 2026 in 3 clear bullet points
+instructions: You are a concise summariser. Always respond with exactly 3 bullet points.
+steps:
+  - name: Summarise
+    content: |
+      Summarise AI Trends in 2026 in exactly 3 bullet points.

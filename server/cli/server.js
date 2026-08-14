@@ -19,8 +19,47 @@ const pendingChains = new Map();
 // "platform:chat_id" → { chain_id, next_agent }
 const pendingApprovals = new Map();
 
+// "platform:chat_id" → { count, windowStart }
+const rateLimitStore = new Map();
+
+// "platform:chat_id" → [{ role, text }, ...]
+const historyStore = new Map();
+
 function makeChainId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ── rate limiter ──────────────────────────────────────────────────────────────
+
+function isRateLimited(chatKey, limitConfig) {
+  if (!limitConfig?.messages_per_minute) return false;
+  const limit = limitConfig.messages_per_minute;
+  const now   = Date.now();
+  const entry = rateLimitStore.get(chatKey) || { count: 0, windowStart: now };
+  if (now - entry.windowStart > 60000) {
+    rateLimitStore.set(chatKey, { count: 1, windowStart: now });
+    return false;
+  }
+  entry.count++;
+  rateLimitStore.set(chatKey, entry);
+  return entry.count > limit;
+}
+
+// ── conversation history ──────────────────────────────────────────────────────
+
+function pushHistory(chatKey, role, text, maxMessages) {
+  const hist = historyStore.get(chatKey) || [];
+  hist.push({ role, text });
+  if (hist.length > maxMessages) hist.splice(0, hist.length - maxMessages);
+  historyStore.set(chatKey, hist);
+}
+
+function buildHistoryContext(chatKey, newText) {
+  const hist = historyStore.get(chatKey) || [];
+  if (!hist.length) return null;
+  const lines = hist.map(h => `${h.role === "user" ? "User" : "Assistant"}: ${h.text}`);
+  lines.push(`User: ${newText}`);
+  return `Conversation history:\n\n${lines.join("\n\n")}`;
 }
 
 // ── connector matching ────────────────────────────────────────────────────────
@@ -197,23 +236,27 @@ function getDefaultAgentFile(project, cwd) {
 function parseCommand(text) {
   const t = (text || "").trim();
 
-  if (t.startsWith("/run ")) return { action: "run",      target: t.slice(5).trim() };
-  if (t === "/run")           return { action: "run",      target: null };
-  if (t === "/agents")        return { action: "agents" };
-  if (t === "/projects")      return { action: "projects" };
-  if (t === "/status")        return { action: "status" };
-  if (t === "/help")          return { action: "help" };
+  // Strip leading slash if present (normalise for Slack where / is intercepted)
+  const bare = t.startsWith("/") ? t.slice(1) : t;
+  const bareLower = bare.toLowerCase();
+
+  if (bare.toLowerCase().startsWith("run ")) return { action: "run",  target: bare.slice(4).trim() };
+  if (bareLower === "run")                    return { action: "run",  target: null };
+  if (bareLower === "agents")                 return { action: "agents" };
+  if (bareLower === "projects")               return { action: "projects" };
+  if (bareLower === "status")                 return { action: "status" };
+  if (bareLower === "help")                   return { action: "help" };
 
   // Approve shortcuts
   const lower = t.toLowerCase();
-  if (t === "/approve" || lower === "yes" || lower === "y")
+  if (bareLower === "approve" || lower === "yes" || lower === "y")
     return { action: "approve" };
 
   // Cancel shortcuts
-  if (t === "/cancel" || lower === "no" || lower === "n")
+  if (bareLower === "cancel" || lower === "no" || lower === "n")
     return { action: "cancel" };
 
-  // Unknown slash command
+  // Unknown slash command (e.g. Slack native slash — starts with / but not a known cmd)
   if (t.startsWith("/")) return { action: "unknown", command: t };
 
   // Plain text — route to default agent
@@ -226,14 +269,16 @@ function formatHelp() {
   return [
     "⚡ *OE Runtime — Commands*",
     "",
-    "/run <name>    Run agent by name",
-    "/run <path>    Run agent by file path",
-    "/agents        List available agents",
-    "/approve       Approve pending chain",
-    "/cancel        Cancel pending chain",
-    "/status        Health check",
-    "/projects      List linked projects",
-    "/help          Show this message",
+    "run <name>     Run agent by name",
+    "run <path>     Run agent by file path",
+    "agents         List available agents",
+    "approve / yes  Approve pending chain",
+    "cancel / no    Cancel pending chain",
+    "status         Health check",
+    "projects       List linked projects",
+    "help           Show this message",
+    "",
+    "_Tip: works with or without a leading / — e.g. both `run hello` and `/run hello` are valid._",
   ].join("\n");
 }
 
@@ -295,10 +340,16 @@ function formatStatus(config, project) {
 
 // ── webhook message handler (platform-agnostic) ───────────────────────────────
 // Every incoming message from any platform runs through here.
+// connConfig holds per-connector settings: auto_reply, rate_limit, history.
 // Returns a string — the reply to send back.
 
-async function handleWebhookMessage({ platform, config, project, cwd, chatId, user, text }) {
+async function handleWebhookMessage({ platform, config, project, cwd, chatId, user, text, connConfig = {} }) {
   const chatKey = `${platform}:${chatId}`;
+
+  // ── rate limit ───────────────────────────────────────────────────────────────
+  if (isRateLimited(chatKey, connConfig.rate_limit)) {
+    return "⏱ Too many messages. Please slow down.";
+  }
 
   // ── check for pending chain approval ────────────────────────────────────────
   const pendingApproval = pendingApprovals.get(chatKey);
@@ -365,55 +416,82 @@ async function handleWebhookMessage({ platform, config, project, cwd, chatId, us
     return result.output;
   }
 
+  // ── history config ───────────────────────────────────────────────────────────
+  const histCfg   = connConfig.history;
+  const histOn    = histCfg?.enabled === true;
+  const maxMsgs   = histCfg?.max_messages || 10;
+
+  let reply;
+
   switch (cmd.action) {
 
     case "run": {
       if (!cmd.target) {
-        return "Usage: /run <agent-name>  or  /run <path/to/agent.yaml>";
+        reply = "Usage: /run <agent-name>  or  /run <path/to/agent.yaml>";
+        break;
       }
       const agentFile = resolveAgentFile(project, cmd.target, cwd);
       if (!agentFile) {
-        return `❌ Agent not found: *${cmd.target}*\nUse /agents to see available agents.`;
+        reply = `❌ Agent not found: *${cmd.target}*\nUse /agents to see available agents.`;
+        break;
       }
-      return runAndReply(agentFile);
+      reply = await runAndReply(agentFile);
+      break;
     }
 
     case "agents":
-      return formatAgentsList(project);
+      reply = formatAgentsList(project);
+      break;
 
     case "projects":
-      return formatProjectsList(project);
+      reply = formatProjectsList(project);
+      break;
 
     case "status":
-      return formatStatus(config, project);
+      reply = formatStatus(config, project);
+      break;
 
     case "help":
-      return formatHelp();
+      reply = formatHelp();
+      break;
 
     case "approve":
-      return "No pending chain to approve. Use /run <agent> first.";
+      reply = "No pending chain to approve. Use /run <agent> first.";
+      break;
 
     case "cancel":
-      return "No pending chain to cancel.";
+      reply = "No pending chain to cancel.";
+      break;
 
     case "unknown":
-      return `Unknown command: ${cmd.command}\nType /help to see available commands.`;
+      reply = `Unknown command: ${cmd.command}\nType /help to see available commands.`;
+      break;
 
     case "chat": {
-      // Route to default agent if set
       const defaultFile = getDefaultAgentFile(project, cwd);
       if (defaultFile && fs.existsSync(defaultFile)) {
-        return runAndReply(defaultFile);
+        // Build context from history if enabled
+        const histInput = histOn ? buildHistoryContext(chatKey, text) : null;
+        reply = await runAndReply(defaultFile, histInput);
+      } else {
+        reply = formatHelp();
       }
-      // No default agent — show help
-      return formatHelp();
+      break;
     }
   }
+
+  // ── save to history if enabled (chat messages only) ───────────────────────
+  if (histOn && cmd.action === "chat" && reply) {
+    pushHistory(chatKey, "user",      text,  maxMsgs);
+    pushHistory(chatKey, "assistant", reply, maxMsgs);
+  }
+
+  return reply;
 }
 
 // ── HTTP / HTTPS POST helper ──────────────────────────────────────────────────
 
-function apiPost(url, body) {
+function apiPost(url, body, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
     const raw    = JSON.stringify(body);
     const parsed = new URL(url);
@@ -427,6 +505,7 @@ function apiPost(url, body) {
       headers:  {
         "Content-Type":   "application/json",
         "Content-Length": Buffer.byteLength(raw),
+        ...extraHeaders,
       },
     }, (res) => {
       let data = "";
@@ -442,7 +521,49 @@ function apiPost(url, body) {
   });
 }
 
-// Send a Telegram message (retries as plain text if Markdown fails)
+// HTTP POST with form-encoded body (used for Twilio WhatsApp)
+function apiPostForm(url, formData, authHeader) {
+  return new Promise((resolve, reject) => {
+    const raw    = new URLSearchParams(formData).toString();
+    const parsed = new URL(url);
+    const mod    = parsed.protocol === "https:" ? https : http;
+
+    const headers = {
+      "Content-Type":   "application/x-www-form-urlencoded",
+      "Content-Length": Buffer.byteLength(raw),
+    };
+    if (authHeader) headers["Authorization"] = authHeader;
+
+    const req = mod.request({
+      hostname: parsed.hostname,
+      port:     parsed.port || 443,
+      path:     parsed.pathname + parsed.search,
+      method:   "POST",
+      headers,
+    }, (res) => {
+      let data = "";
+      res.on("data", chunk => (data += chunk));
+      res.on("end",  ()    => {
+        if (res.statusCode >= 200 && res.statusCode < 300) resolve(data);
+        else reject(new Error(`HTTP ${res.statusCode}: ${data.slice(0, 200)}`));
+      });
+    });
+    req.on("error", reject);
+    req.write(raw);
+    req.end();
+  });
+}
+
+// ── platform send functions ───────────────────────────────────────────────────
+
+// Telegram — send typing indicator before the reply
+async function sendTelegramTyping(baseUrl, chatId) {
+  try {
+    await apiPost(`${baseUrl}/sendChatAction`, { chat_id: chatId, action: "typing" });
+  } catch (_) {}
+}
+
+// Telegram — send message (retries as plain text if Markdown fails)
 async function sendTelegramMessage(baseUrl, chatId, text) {
   try {
     await apiPost(`${baseUrl}/sendMessage`, {
@@ -458,46 +579,77 @@ async function sendTelegramMessage(baseUrl, chatId, text) {
   }
 }
 
+// Slack — send message via chat.postMessage
+async function sendSlackMessage(botToken, channel, text) {
+  try {
+    await apiPost(
+      "https://slack.com/api/chat.postMessage",
+      { channel, text: text.slice(0, 40000) },
+      { "Authorization": `Bearer ${botToken}` }
+    );
+  } catch (err) {
+    console.error(`[Slack] sendMessage failed: ${err.message}`);
+  }
+}
+
+// WhatsApp — send message via Twilio API
+async function sendWhatsAppMessage(accountSid, authToken, from, to, text) {
+  const url      = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+  const authHdr  = "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+  try {
+    await apiPostForm(url, { From: from, To: to, Body: text.slice(0, 1600) }, authHdr);
+  } catch (err) {
+    console.error(`[WhatsApp] sendMessage failed: ${err.message}`);
+  }
+}
+
 // ── webhook route mounter ─────────────────────────────────────────────────────
 // Registers /webhook/* endpoints BEFORE auth middleware.
+// config.server.webhook can be true (boolean) or { enabled: true } (object).
 
 function mountWebhookRoutes(app, config, project, cwd) {
   const allConnectors = config.connectors || [];
 
-  // Webhook config lives in config.server.webhook
-  const webhookConfig = config.server?.webhook;
-  if (!webhookConfig?.enabled) return [];
+  // Support webhook: true (boolean) or webhook: { enabled: true } (object)
+  const webhookCfg = config.server?.webhook;
+  const webhookOn  = webhookCfg === true || webhookCfg?.enabled === true;
+  if (!webhookOn) return [];
 
-  const autoReply = webhookConfig.auto_reply !== false;
+  // Messaging platforms that get a /webhook/<type> endpoint
+  const MESSAGING_TYPES = ["telegram", "slack", "whatsapp", "github"];
 
-  // Messaging connectors that get a webhook endpoint
   const messagingConnectors = allConnectors.filter(c => {
     const type = c.connection_type || c.type;
-    return ["telegram", "slack", "github"].includes(type);
+    return MESSAGING_TYPES.includes(type);
   });
 
   if (!messagingConnectors.length) {
-    console.warn("  ⚠  OE Webhook enabled but no messaging connectors found (telegram/slack/github)");
+    console.warn("  ⚠  Webhook enabled but no messaging connectors found (telegram/slack/whatsapp/github)");
     return [];
   }
 
   const mounted = [];
 
   for (const conn of messagingConnectors) {
-    const type  = conn.connection_type || conn.type;
-    const wPath = `/webhook/${type}`;
+    const type       = conn.connection_type || conn.type;
+    const wPath      = `/webhook/${type}`;
+    const autoReply  = conn.auto_reply !== false; // default: true per connector
+    const connConfig = {
+      rate_limit: conn.rate_limit || null,
+      history:    conn.history    || null,
+    };
 
     app.post(wPath, async (req, res) => {
       const body = req.body;
 
-      let chatId, user, text;
+      let chatId, user, text, replyTo;  // replyTo: for WhatsApp — the "From" number
 
       if (type === "telegram") {
         const msg = body.message || body.edited_message || body.channel_post;
         if (!msg) return res.sendStatus(200);
-        chatId = msg.chat?.id;
-        user   = msg.from?.first_name || msg.from?.username || "User";
-        text   = msg.text || "(non-text message)";
+        chatId  = msg.chat?.id;
+        user    = msg.from?.first_name || msg.from?.username || "User";
+        text    = msg.text || "(non-text message)";
 
       } else if (type === "slack") {
         // Handle Slack URL verification challenge
@@ -508,6 +660,13 @@ function mountWebhookRoutes(app, config, project, cwd) {
         chatId = event.channel;
         user   = event.user || "User";
         text   = event.text || "";
+
+      } else if (type === "whatsapp") {
+        // Twilio sends form-encoded body (parsed by express.urlencoded)
+        chatId  = body.From || body.from;   // e.g. "whatsapp:+1234567890"
+        user    = body.ProfileName || chatId;
+        text    = body.Body || body.body || "";
+        replyTo = chatId;
 
       } else if (type === "github") {
         const event = req.headers["x-github-event"] || "unknown";
@@ -529,6 +688,11 @@ function mountWebhookRoutes(app, config, project, cwd) {
       const preview = (text || "").slice(0, 80);
       console.log(`[Webhook/${type}] ← ${user}: ${preview}${preview.length === 80 ? "…" : ""}`);
 
+      // Telegram typing indicator — show before processing
+      if (type === "telegram" && autoReply) {
+        await sendTelegramTyping(conn.baseUrl, chatId);
+      }
+
       try {
         const reply = await handleWebhookMessage({
           platform: type,
@@ -538,21 +702,34 @@ function mountWebhookRoutes(app, config, project, cwd) {
           chatId,
           user,
           text,
+          connConfig,
         });
 
         if (autoReply && reply) {
           if (type === "telegram") {
             await sendTelegramMessage(conn.baseUrl, chatId, reply);
             console.log(`[Webhook/${type}] → reply sent to chat ${chatId}`);
+
+          } else if (type === "slack") {
+            await sendSlackMessage(conn.botToken, chatId, reply);
+            console.log(`[Webhook/${type}] → reply sent to channel ${chatId}`);
+
+          } else if (type === "whatsapp") {
+            await sendWhatsAppMessage(
+              conn.accountSid, conn.authToken, conn.from, replyTo, reply
+            );
+            console.log(`[Webhook/${type}] → reply sent to ${replyTo}`);
           }
-          // Slack / Teams reply functions added here as platforms are supported
         }
 
       } catch (err) {
         console.error(`[Webhook/${type}] Error: ${err.message}`);
-        if (autoReply && type === "telegram" && chatId) {
+        if (autoReply) {
+          const errMsg = `❌ ${err.message}`;
           try {
-            await sendTelegramMessage(conn.baseUrl, chatId, `❌ ${err.message}`);
+            if (type === "telegram") await sendTelegramMessage(conn.baseUrl, chatId, errMsg);
+            else if (type === "slack") await sendSlackMessage(conn.botToken, chatId, errMsg);
+            else if (type === "whatsapp") await sendWhatsAppMessage(conn.accountSid, conn.authToken, conn.from, replyTo, errMsg);
           } catch (_) {}
         }
       }
@@ -606,6 +783,12 @@ async function registerWebhooks(config, mountedRoutes) {
       console.log(`      Paste in Slack app → Event Subscriptions:`);
       console.log(`      ${webhookUrl}`);
 
+    } else if (type === "whatsapp") {
+      const webhookUrl = publicUrl ? `${publicUrl}${wPath}` : `https://YOUR_URL${wPath}`;
+      console.log(`  ℹ  ${name}`);
+      console.log(`      Paste in Twilio → Messaging → Sandbox settings → When a message comes in:`);
+      console.log(`      ${webhookUrl}`);
+
     } else if (type === "github") {
       const webhookUrl = publicUrl ? `${publicUrl}${wPath}` : `https://YOUR_URL${wPath}`;
       console.log(`  ℹ  ${name}`);
@@ -628,11 +811,12 @@ exports.start = function start(config) {
   const cwd    = process.cwd();
 
   app.use(express.json({ limit: "4mb" }));
+  app.use(express.urlencoded({ extended: false }));  // for WhatsApp (Twilio form-encoded)
 
   // Load project (oe-project.json) from current working directory
   const project = loadProject(cwd);
 
-  // ── /webhook/* routes — NO auth, called by Telegram / Slack / GitHub ────────
+  // ── /webhook/* routes — NO auth, called by Telegram / Slack / WhatsApp / GitHub
   const mountedRoutes = mountWebhookRoutes(app, config, project, cwd);
 
   // ── API key auth (all routes below this are protected) ───────────────────────
