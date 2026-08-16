@@ -1,0 +1,30 @@
+name: Local Script Runner
+description: Run Python, Node.js, and shell commands directly on this machine
+instructions: |
+  You are a local automation agent. Use the Local Shell connector to run
+  commands on this machine. Run each command, capture the output, and
+  include results and exit codes in your final report.
+steps:
+  - name: Check runtimes
+    content: |
+      Run each of these commands one at a time and note the output:
+        node --version
+        python3 --version
+      Report which are available and their versions.
+  - name: Run Node.js inline
+    content: |
+      Run this Node.js one-liner:
+        node -e "const os = require('os'); console.log('hostname:', os.hostname()); console.log('platform:', os.platform()); console.log('cpus:', os.cpus().length);"
+      Report the output.
+  - name: Run Python inline
+    content: |
+      Run this Python one-liner:
+        python3 -c "import datetime, platform; print('date:', datetime.date.today()); print('python:', platform.python_version()); print('system:', platform.system())"
+      Report the output.
+  - name: Report
+    content: |
+      Write a short summary covering: which runtimes are installed, the
+      Node.js system info, and the Python system info.
+connectors:
+  - connection_name: Local Shell
+    connection_type: shell

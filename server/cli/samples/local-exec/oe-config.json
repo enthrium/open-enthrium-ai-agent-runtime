@@ -1,0 +1,15 @@
+{
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "apiKey": "YOUR_OPENAI_API_KEY"
+  },
+  "connectors": [
+    {
+      "connection_name": "Local Shell",
+      "connection_type": "shell",
+      "cwd": ".",
+      "timeout": 30
+    }
+  ]
+}

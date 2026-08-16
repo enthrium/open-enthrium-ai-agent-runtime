@@ -85,7 +85,7 @@ router.get("/manager", authenticate, async (req, res) => {
     }),
     agentIds.length ? db.agentRun.findMany({
       where: { agentId: { in: agentIds }, startedAt: { gte: thirtyDaysAgo } },
-      select: { startedAt: true, status: true, triggerType: true }
+      select: { startedAt: true, status: true }
     }) : Promise.resolve([]),
   ]);
 
@@ -105,8 +105,7 @@ router.get("/manager", authenticate, async (req, res) => {
     agentRunSuccess:  agentRuns.filter(r => r.status === "success").length,
     agentRunErrors:   agentRuns.filter(r => r.status === "error").length,
     agentRunsByTrigger: [
-      { name: "Manual",    value: agentRuns.filter(r => r.triggerType !== "scheduled").length, color: "#6366f1" },
-      { name: "Scheduled", value: agentRuns.filter(r => r.triggerType === "scheduled").length, color: "#f59e0b" },
+      { name: "Runs", value: agentRuns.length, color: "#6366f1" },
     ].filter(s => s.value > 0),
     documentsByStatus:  statusSeries(statusCounts),
     agentRunActivity:   groupByDay(agentRuns, "startedAt"),
@@ -135,7 +134,7 @@ router.get("/admin", authenticate, async (req, res) => {
 
   const tier = await getTierFromDB(db);
 
-  const [users, workspaces, documents, recentUserChats, allAssistantChats, connectorCount, agentRunsThisMonth, recentAgentRuns] = await Promise.all([
+  const [users, workspaces, documents, recentUserChats, allAssistantChats, agentRunsThisMonth, recentAgentRuns] = await Promise.all([
     db.user.findMany({ select: { id: true, role: true, createdAt: true } }),
     db.workspace.findMany({
       select: { id: true, name: true, _count: { select: { documents: true, chats: true } } }
@@ -151,11 +150,10 @@ router.get("/admin", authenticate, async (req, res) => {
       where: { role: "assistant" },
       select: { inputTokens: true, outputTokens: true, model: true }
     }),
-    db.connector.count(),
     getAgentRunsThisMonth(db),
     db.agentRun.findMany({
       where: { startedAt: { gte: thirtyDaysAgo } },
-      select: { startedAt: true, status: true, triggerType: true }
+      select: { startedAt: true, status: true }
     }),
   ]);
 
@@ -216,8 +214,8 @@ router.get("/admin", authenticate, async (req, res) => {
       workspaceLimit:       isFinite(tier.maxWorkspaces)        ? tier.maxWorkspaces        : null,
       userCount:            users.length,
       userLimit:            isFinite(tier.maxUsers)             ? tier.maxUsers             : null,
-      connectorCount,
-      connectorLimit:       isFinite(tier.maxConnectors)        ? tier.maxConnectors        : null,
+      connectorCount:       0,
+      connectorLimit:       null,
       agentRunsThisMonth,
       agentRunsLimit:       isFinite(tier.maxAgentRunsPerMonth) ? tier.maxAgentRunsPerMonth : null,
       storageUsedGb:        parseFloat(storageUsedGb.toFixed(3)),
@@ -228,8 +226,7 @@ router.get("/admin", authenticate, async (req, res) => {
     agentRunSuccess:  recentAgentRuns.filter(r => r.status === "success").length,
     agentRunErrors:   recentAgentRuns.filter(r => r.status === "error").length,
     agentRunsByTrigger: [
-      { name: "Manual",    value: recentAgentRuns.filter(r => r.triggerType !== "scheduled").length, color: "#6366f1" },
-      { name: "Scheduled", value: recentAgentRuns.filter(r => r.triggerType === "scheduled").length, color: "#f59e0b" },
+      { name: "Runs", value: recentAgentRuns.length, color: "#6366f1" },
     ].filter(s => s.value > 0),
     chatActivity:     groupByDay(recentUserChats, "createdAt"),
     agentRunActivity: groupByDay(recentAgentRuns, "startedAt"),

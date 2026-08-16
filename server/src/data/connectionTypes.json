@@ -511,6 +511,13 @@
     "cat": "Developer Tools"
   },
   {
+    "id": "shell",
+    "label": "Local Shell",
+    "color": "bg-gray-700",
+    "initial": "SH",
+    "cat": "Developer Tools"
+  },
+  {
     "id": "jenkins",
     "label": "Jenkins",
     "color": "bg-red-600",

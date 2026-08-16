@@ -116,7 +116,7 @@ router.get("/workspaces", requireManagerOrAdminOrUser, async (req, res) => {
     where,
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { documents: true, chats: true, users: true, connectors: true, agents: true } },
+      _count: { select: { documents: true, chats: true, users: true, agents: true } },
       createdBy: { select: { id: true, name: true, email: true } },
     }
   });
@@ -139,7 +139,7 @@ router.post("/workspaces", requireManagerOrAdmin, async (req, res) => {
   const workspace = await req.db.workspace.create({
     data: { name, slug, createdByUserId: req.user.id || null },
     include: {
-      _count: { select: { documents: true, chats: true, users: true, connectors: true, agents: true } },
+      _count: { select: { documents: true, chats: true, users: true, agents: true } },
       createdBy: { select: { id: true, name: true, email: true } },
     }
   });
@@ -181,7 +181,7 @@ router.get("/workspaces/:id", requireManagerOrAdmin, async (req, res) => {
 });
 
 router.put("/workspaces/:id", requireManagerOrAdmin, async (req, res) => {
-  const { name, systemPrompt, temperature, chatHistory, queryRefusalResponse, starterPrompts, vectorDbProvider, vectorDbConfig, embedEnabled, defaultAgentMaxRounds } = req.body;
+  const { name, systemPrompt, temperature, chatHistory, queryRefusalResponse, starterPrompts, vectorDbProvider, vectorDbConfig, embedEnabled } = req.body;
   const workspace = await req.db.workspace.update({
     where: { id: parseInt(req.params.id) },
     data: {
@@ -193,8 +193,6 @@ router.put("/workspaces/:id", requireManagerOrAdmin, async (req, res) => {
       ...(starterPrompts !== undefined && { starterPrompts: JSON.stringify(starterPrompts) }),
       ...(embedEnabled !== undefined && { embedEnabled: Boolean(embedEnabled) }),
       ...(req.body.dlpEnabled !== undefined && { dlpEnabled: Boolean(req.body.dlpEnabled) }),
-      ...(defaultAgentMaxRounds !== undefined && { defaultAgentMaxRounds: Math.max(1, Math.min(100, parseInt(defaultAgentMaxRounds) || 25)) }),
-      ...(req.body.maxChainDepth !== undefined && { maxChainDepth: Math.max(1, Math.min(20, parseInt(req.body.maxChainDepth) || 5)) }),
       ...(vectorDbProvider !== undefined && req.user.role === "admin" && { vectorDbProvider: vectorDbProvider || null }),
       ...(vectorDbConfig !== undefined && req.user.role === "admin" && { vectorDbConfig: vectorDbConfig ? JSON.stringify(vectorDbConfig) : null }),
     }
@@ -492,24 +490,16 @@ router.delete("/purge/chats", requireAdmin, async (req, res) => {
   res.json({ message: `Purged ${count} chat message(s).` });
 });
 
-router.delete("/purge/agent-runs", requireAdmin, async (req, res) => {
-  const base = purgeWhere(req.query, "startedAt");
-  if (req.query.workspaceId) {
-    base.agent = { workspaceId: parseInt(req.query.workspaceId) };
-    delete base.workspaceId;
-  }
-  const { count } = await req.db.agentRun.deleteMany({ where: base });
-  res.json({ message: `Purged ${count} agent run(s).` });
-});
-
-router.delete("/purge/agent-memory", requireAdmin, async (req, res) => {
-  const base = purgeWhere(req.query, "startedAt");
-  if (req.query.workspaceId) {
-    base.agent = { workspaceId: parseInt(req.query.workspaceId) };
-    delete base.workspaceId;
-  }
-  const { count } = await req.db.agentRun.updateMany({ where: base, data: { output: null } });
-  res.json({ message: `Cleared memory from ${count} agent run(s).` });
+router.delete("/purge/project-runs", requireAdmin, async (req, res) => {
+  const { workspaceId, from, to } = req.query;
+  const where = {};
+  if (workspaceId) where.project = { workspaceId: parseInt(workspaceId) };
+  const range = {};
+  if (from) range.gte = new Date(from);
+  if (to)   range.lte = new Date(to);
+  if (Object.keys(range).length) where.startedAt = range;
+  const { count } = await req.db.projectRun.deleteMany({ where });
+  res.json({ message: `Purged ${count} project run(s).` });
 });
 
 router.delete("/purge/threads", requireAdmin, async (req, res) => {

@@ -80,7 +80,7 @@ const coreItems = [
     {
       yaml:   "name: Hello World\nsteps:\n  - name: Say hello\n    content: Say hello world",
       params: {},
-      input:  null,
+      input:  "run",
     },
     "Run an agent by passing YAML inline.\n\nReturns:\n  { success, agent, output, chains, pending_chains, duration_ms }\n\nNote: chains: with relative next_agent paths require /run-file instead (path resolution needs a base directory)."
   ),
@@ -91,7 +91,7 @@ const coreItems = [
     {
       file:   "/path/to/your/agent.yaml",
       params: {},
-      input:  null,
+      input:  "run",
     },
     "Run an agent from a YAML file path on the server's disk.\n\nReturns:\n  { success, agent, output, chains, pending_chains, duration_ms }\n\n- chains: array of auto-chain results (nested, recursive)\n- pending_chains: array of manual chains awaiting approval via POST /approve-chain"
   ),
@@ -127,7 +127,7 @@ function buildSampleRequest(sampleDir) {
   return postRequest(
     agentName,
     "/run",
-    { yaml: rawYaml.replace(/\r\n/g, "\n"), params: {}, input: null },
+    { yaml: rawYaml.replace(/\r\n/g, "\n"), params: {}, input: "run" },
     description
   );
 }

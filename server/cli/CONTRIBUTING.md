@@ -32,7 +32,7 @@ node server/cli/index.js server/cli/samples/your-connector/agent.yaml \
 Include the connector name and what the sample demonstrates.
 
 **Existing samples for reference:**
-`sql-databases` · `nosql-cache` · `file-storage` · `cloud-drives` · `email` · `team-messaging` · `rest-api` · `graphql` · `ssh` · `message-queues` · `web-search` · `image-generation` · `speech-audio` · `video-generation` · `music-generation` · `blockchain-web3` · `directory-identity` · `iot-messaging` · `ocr-vision` · `productivity-crm`
+`sql-databases` · `nosql-cache` · `file-storage` · `cloud-drives` · `email` · `team-messaging` · `rest-api` · `graphql` · `ssh` · `local-exec` · `message-queues` · `web-search` · `image-generation` · `speech-audio` · `video-generation` · `music-generation` · `blockchain-web3` · `directory-identity` · `iot-messaging` · `ocr-vision` · `productivity-crm` · `telegram` · `chains` · `blog-to-video`
 
 ---
 

@@ -867,7 +867,7 @@ exports.start = function start(config) {
 
   // ── POST /run ────────────────────────────────────────────────────────────────
   app.post("/run", async (req, res) => {
-    const { yaml: yamlText, params = {}, input = null } = req.body || {};
+    const { yaml: yamlText, params = {}, input = "run" } = req.body || {};
     if (!yamlText) return res.status(400).json({ error: "yaml is required" });
 
     let agentYaml;
@@ -885,7 +885,7 @@ exports.start = function start(config) {
 
   // ── POST /run-file ───────────────────────────────────────────────────────────
   app.post("/run-file", async (req, res) => {
-    const { file, params = {}, input = null } = req.body || {};
+    const { file, params = {}, input = "run" } = req.body || {};
     if (!file)                   return res.status(400).json({ error: "file is required" });
     if (!fs.existsSync(file))    return res.status(404).json({ error: "file not found: " + file });
 

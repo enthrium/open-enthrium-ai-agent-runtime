@@ -48,13 +48,7 @@ router.get("/:slug", authenticate, async (req, res) => {
     where:   { workspaceId: workspace.id },
     orderBy: { createdAt: "desc" }
   });
-  const connectorIds = [...new Set(documents.map(d => d.connectorId).filter(Boolean))];
-  const connectors = connectorIds.length
-    ? await req.db.connector.findMany({ where: { id: { in: connectorIds } }, select: { id: true, name: true } })
-    : [];
-  const connectorMap = Object.fromEntries(connectors.map(c => [c.id, c.name]));
-  const enriched = documents.map(d => ({ ...d, connectorName: d.connectorId ? connectorMap[d.connectorId] : undefined }));
-  res.json({ documents: enriched });
+  res.json({ documents });
 });
 
 // Upload file(s)
@@ -220,156 +214,22 @@ router.post("/:slug/ingest-github", authenticate, requireManagerOrAdmin, async (
   res.json({ queued, skipped, total: files.length, repo: `${owner}/${repo}`, branch });
 });
 
-// List Google Drive folders (for picker UI)
-router.get("/:slug/gdrive-folders", authenticate, requireManagerOrAdmin, async (req, res) => {
-  const { connectorId } = req.query;
-  if (!connectorId) return res.status(400).json({ error: "connectorId required" });
-
-  const connector = await req.db.connector.findUnique({ where: { id: parseInt(connectorId) } });
-  if (!connector || connector.type !== "gdrive") return res.status(404).json({ error: "Google Drive connector not found" });
-
-  try {
-    const { buildDriveClient } = require("../utils/tools/adapters/gdrive");
-    const authConfig = JSON.parse(connector.authConfig || "{}");
-    const drive = await buildDriveClient(authConfig, req.db, connector.workspaceId);
-    const res2 = await drive.files.list({
-      q: "mimeType='application/vnd.google-apps.folder' and trashed=false",
-      pageSize: 50,
-      fields: "files(id, name)",
-      orderBy: "name",
-    });
-    res.json({ folders: res2.data.files || [] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// Google Drive folder picker removed — cloud connector sync is no longer supported
+router.get("/:slug/gdrive-folders", authenticate, requireManagerOrAdmin, (req, res) => {
+  res.json({ folders: [] });
 });
 
-// List all cloud storage connectors (gdrive, onedrive, dropbox, box)
-const PROVIDER_LABELS = { gdrive: "Google Drive", onedrive: "OneDrive", dropbox: "Dropbox", box: "Box" };
-router.get("/:slug/cloud-connectors", authenticate, requireManagerOrAdmin, async (req, res) => {
-  const workspace = await req.db.workspace.findUnique({ where: { slug: req.params.slug } });
-  if (!workspace) return res.status(404).json({ error: "Workspace not found" });
-  const connectors = await req.db.connector.findMany({ where: { workspaceId: workspace.id, type: { in: ["gdrive", "onedrive", "dropbox", "box"] } } });
-  res.json({ connectors: connectors.map(c => ({ id: c.id, name: c.name, type: c.type, provider: PROVIDER_LABELS[c.type] || c.type })) });
+// Cloud connector endpoints removed — cloud sync via connectors is no longer supported
+router.get("/:slug/cloud-connectors", authenticate, requireManagerOrAdmin, (req, res) => {
+  res.json({ connectors: [] });
+});
+router.get("/:slug/gdrive-connectors", authenticate, requireManagerOrAdmin, (req, res) => {
+  res.json({ connectors: [] });
 });
 
-// Keep backward-compat alias
-router.get("/:slug/gdrive-connectors", authenticate, requireManagerOrAdmin, async (req, res) => {
-  const workspace = await req.db.workspace.findUnique({ where: { slug: req.params.slug } });
-  if (!workspace) return res.status(404).json({ error: "Workspace not found" });
-  const connectors = await req.db.connector.findMany({ where: { workspaceId: workspace.id, type: "gdrive" } });
-  res.json({ connectors: connectors.map(c => ({ id: c.id, name: c.name, provider: "Google Drive" })) });
-});
-
-// Ingest all files from a Google Drive folder
-router.post("/:slug/ingest-gdrive-folder", authenticate, requireManagerOrAdmin, async (req, res) => {
-  const { connectorId, folderId, folderName } = req.body;
-  if (!connectorId || !folderId) return res.status(400).json({ error: "connectorId and folderId required" });
-
-  const workspace = await req.db.workspace.findUnique({ where: { slug: req.params.slug } });
-  if (!workspace) return res.status(404).json({ error: "Workspace not found" });
-
-  const connector = await req.db.connector.findUnique({ where: { id: parseInt(connectorId) } });
-  if (!connector || connector.type !== "gdrive") return res.status(404).json({ error: "Google Drive connector not found" });
-
-  try {
-    const { buildDriveClient } = require("../utils/tools/adapters/gdrive");
-    const { google } = require("googleapis");
-    const XLSX = require("xlsx");
-    const authConfig = JSON.parse(connector.authConfig || "{}");
-    const drive = await buildDriveClient(authConfig, req.db, connector.workspaceId);
-
-    const SUPPORTED_MIME = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/msword",
-      "text/plain",
-      "text/csv",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "application/vnd.ms-excel",
-      "application/json",
-      "application/vnd.google-apps.spreadsheet",
-      "application/vnd.google-apps.document",
-    ];
-
-    // Detect if it's a single file or a folder
-    const fileMeta = await drive.files.get({ fileId: folderId, fields: "id, name, mimeType" }).catch(() => null);
-    const isFile = fileMeta && fileMeta.data.mimeType !== "application/vnd.google-apps.folder";
-
-    let files;
-    if (isFile) {
-      files = SUPPORTED_MIME.includes(fileMeta.data.mimeType) ? [fileMeta.data] : [];
-      if (!files.length) return res.status(400).json({ error: `File type "${fileMeta.data.mimeType}" is not supported` });
-    } else {
-      const listRes = await drive.files.list({
-        q: `'${folderId}' in parents and trashed=false`,
-        pageSize: 200,
-        fields: "files(id, name, mimeType, size)",
-      });
-      files = (listRes.data.files || []).filter(f => SUPPORTED_MIME.includes(f.mimeType));
-      if (!files.length) return res.status(400).json({ error: "No supported files found in this Drive folder" });
-    }
-
-    const GDRIVE_TMP = path.join(__dirname, "../../storage/gdrive-tmp/");
-    fs.mkdirSync(GDRIVE_TMP, { recursive: true });
-
-    let queued = 0, skipped = 0;
-
-    for (const file of files) {
-      try {
-        const isGSheet = file.mimeType === "application/vnd.google-apps.spreadsheet";
-        const isGDoc   = file.mimeType === "application/vnd.google-apps.document";
-        const tmpName  = uuidv4() + (isGSheet ? ".csv" : isGDoc ? ".txt" : path.extname(file.name) || ".bin");
-        const tmpPath  = path.join(GDRIVE_TMP, tmpName);
-        const writer   = fs.createWriteStream(tmpPath);
-
-        if (isGSheet) {
-          const exportRes = await drive.files.export({ fileId: file.id, mimeType: "text/csv" }, { responseType: "stream" });
-          await new Promise((resolve, reject) => {
-            exportRes.data.pipe(writer);
-            exportRes.data.on("end", resolve);
-            exportRes.data.on("error", reject);
-          });
-        } else if (isGDoc) {
-          const exportRes = await drive.files.export({ fileId: file.id, mimeType: "text/plain" }, { responseType: "stream" });
-          await new Promise((resolve, reject) => {
-            exportRes.data.pipe(writer);
-            exportRes.data.on("end", resolve);
-            exportRes.data.on("error", reject);
-          });
-        } else {
-          const dlRes = await drive.files.get({ fileId: file.id, alt: "media" }, { responseType: "stream" });
-          await new Promise((resolve, reject) => {
-            dlRes.data.pipe(writer);
-            dlRes.data.on("end", resolve);
-            dlRes.data.on("error", reject);
-          });
-        }
-
-        const stat = fs.statSync(tmpPath);
-        const docName = isGSheet ? file.name + ".csv" : isGDoc ? file.name + ".txt" : file.name;
-        const uid = uuidv4();
-        const doc = await req.db.document.create({
-          data: {
-            uid,
-            name:        docName,
-            type:        path.extname(tmpName).slice(1) || "bin",
-            size:        stat.size,
-            workspaceId: workspace.id,
-            status:      "queued",
-            sourcePath:  tmpPath,
-            connectorId: connector.id,
-          }
-        });
-        ingestionQueue.enqueue(req.db, workspace, doc, tmpPath, "file", false, req.user.id);
-        queued++;
-      } catch { skipped++; }
-    }
-
-    res.json({ queued, skipped, total: files.length, folder: folderName || folderId });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// Google Drive ingest removed — cloud connector sync is no longer supported
+router.post("/:slug/ingest-gdrive-folder", authenticate, requireManagerOrAdmin, (req, res) => {
+  res.status(410).json({ error: "Cloud connector sync has been removed." });
 });
 
 // Ingest local folder
@@ -528,92 +388,9 @@ router.post("/:slug/:uid/retry", authenticate, requireManagerOrAdmin, async (req
   res.json({ document: updated });
 });
 
-// Unified cloud storage ingestion (Google Drive, OneDrive, Dropbox, Box)
-router.post("/:slug/ingest-cloud-folder", authenticate, requireManagerOrAdmin, async (req, res) => {
-  const { connectorId, resourceId, resourceUrl } = req.body;
-  if (!connectorId || !resourceId) return res.status(400).json({ error: "connectorId and resourceId required" });
-
-  const workspace = await req.db.workspace.findUnique({ where: { slug: req.params.slug } });
-  if (!workspace) return res.status(404).json({ error: "Workspace not found" });
-
-  const connector = await req.db.connector.findUnique({ where: { id: parseInt(connectorId) } });
-  if (!connector) return res.status(404).json({ error: "Connector not found" });
-
-  if (connector.type === "gdrive") return res.status(400).json({ error: "Use /ingest-gdrive-folder for Google Drive" });
-
-  const CLOUD_TMP = path.join(__dirname, "../../storage/cloud-tmp/");
-  fs.mkdirSync(CLOUD_TMP, { recursive: true });
-
-  try {
-    let files = [];
-
-    if (connector.type === "onedrive") {
-      const { getToken } = require("../utils/tools/adapters/onedrive");
-      const token = await getToken(connector, req.db);
-      const axios = require("axios");
-      const headers = { Authorization: `Bearer ${token}` };
-
-      // Detect file vs folder
-      const meta = await axios.get(`https://graph.microsoft.com/v1.0/me/drive/items/${resourceId}`, { headers }).catch(() => null);
-      if (meta?.data?.file) {
-        files = [{ id: resourceId, name: meta.data.name, downloadFn: async () => (await axios.get(`https://graph.microsoft.com/v1.0/me/drive/items/${resourceId}/content`, { headers, responseType: "arraybuffer" })).data }];
-      } else {
-        const list = await axios.get(`https://graph.microsoft.com/v1.0/me/drive/items/${resourceId}/children?$top=200`, { headers });
-        files = (list.data.value || []).filter(f => f.file).map(f => ({ id: f.id, name: f.name,
-          downloadFn: async () => (await axios.get(`https://graph.microsoft.com/v1.0/me/drive/items/${f.id}/content`, { headers, responseType: "arraybuffer" })).data }));
-      }
-    }
-
-    if (connector.type === "dropbox") {
-      const { getToken } = require("../utils/tools/adapters/dropbox");
-      const token = await getToken(connector, req.db);
-      const axios = require("axios");
-      const listRes = await axios.post("https://api.dropboxapi.com/2/files/list_folder",
-        { path: resourceId.startsWith("/") ? resourceId : `/${resourceId}` },
-        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
-      files = (listRes.data.entries || []).filter(e => e[".tag"] === "file").map(f => ({ id: f.id, name: f.name, path: f.path_display,
-        downloadFn: async () => (await axios.post("https://content.dropboxapi.com/2/files/download", null, {
-          headers: { Authorization: `Bearer ${token}`, "Dropbox-API-Arg": JSON.stringify({ path: f.path_display }) }, responseType: "arraybuffer" })).data }));
-    }
-
-    if (connector.type === "box") {
-      const { getToken } = require("../utils/tools/adapters/box");
-      const token = await getToken(connector, req.db);
-      const axios = require("axios");
-      const headers = { Authorization: `Bearer ${token}` };
-      const meta = await axios.get(`https://api.box.com/2.0/files/${resourceId}`, { headers }).catch(() => null);
-      if (meta?.data?.type === "file") {
-        files = [{ id: resourceId, name: meta.data.name, downloadFn: async () => (await axios.get(`https://api.box.com/2.0/files/${resourceId}/content`, { headers, responseType: "arraybuffer" })).data }];
-      } else {
-        const list = await axios.get(`https://api.box.com/2.0/folders/${resourceId}/items?limit=200`, { headers });
-        files = (list.data.entries || []).filter(e => e.type === "file").map(f => ({ id: f.id, name: f.name,
-          downloadFn: async () => (await axios.get(`https://api.box.com/2.0/files/${f.id}/content`, { headers, responseType: "arraybuffer" })).data }));
-      }
-    }
-
-    if (!files.length) return res.status(400).json({ error: "No supported files found" });
-
-    // Download and queue
-    const SUPPORTED = [".pdf", ".docx", ".doc", ".txt", ".csv", ".xlsx", ".xls", ".json", ".md"];
-    const queued = [];
-    for (const file of files) {
-      const ext = path.extname(file.name).toLowerCase();
-      if (!SUPPORTED.includes(ext)) continue;
-      try {
-        const buf = await file.downloadFn();
-        const tmpPath = path.join(CLOUD_TMP, `${Date.now()}-${file.name}`);
-        fs.writeFileSync(tmpPath, Buffer.from(buf));
-        const uid2 = require("uuid").v4();
-        const doc = await req.db.document.create({ data: { uid: uid2, name: file.name, workspaceId: workspace.id, status: "queued", sourcePath: tmpPath, type: connector.type, connectorId: connector.id, uploadedByUserId: req.user?.id || null } });
-        ingestionQueue.enqueue(req.db, workspace, doc, tmpPath, "file", false, req.user.id);
-        queued.push(file.name);
-      } catch { /* skip individual failures */ }
-    }
-
-    res.json({ ok: true, queued: queued.length, files: queued });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// Cloud storage ingestion removed — cloud connector sync is no longer supported
+router.post("/:slug/ingest-cloud-folder", authenticate, requireManagerOrAdmin, (req, res) => {
+  res.status(410).json({ error: "Cloud connector sync has been removed." });
 });
 
 // Retry all failed/partial documents in a workspace

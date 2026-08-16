@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.7.3] — 2026-08-16
+
+No changes to OE Runtime in this release.
+
+---
+
 ## [v1.7.2] — 2026-08-14
 
 ### Fixed

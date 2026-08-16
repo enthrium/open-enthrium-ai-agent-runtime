@@ -201,12 +201,21 @@ All endpoints require the `x-api-key` header when `server.apiKey` is set in your
 | `POST` | `/webhook/telegram` | Telegram webhook receiver (enabled via `server.webhook`) |
 | `POST` | `/webhook/slack` | Slack webhook receiver (enabled via `server.webhook`) |
 
-**POST /run-file** — body:
+**POST /run** — body (inline YAML):
+```json
+{
+  "yaml": "name: My Agent\nsteps:\n  - name: Run\n    content: Execute the task",
+  "params": {},
+  "input": "run"
+}
+```
+
+**POST /run-file** — body (file path on server disk):
 ```json
 {
   "file": "/path/to/agent.yaml",
   "params": { "topic": "AI trends" },
-  "input": "Run"
+  "input": "run"
 }
 ```
 
@@ -240,11 +249,17 @@ Response:
 # Health check
 curl http://localhost:3333/health -H "x-api-key: your-secret"
 
-# Run agent from file (with chain support)
+# Run agent from inline YAML
+curl -X POST http://localhost:3333/run \
+  -H "x-api-key: your-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"yaml": "name: Hi\nsteps:\n  - name: Greet\n    content: Say hi!", "params": {}, "input": "run"}'
+
+# Run agent from file on disk (with chain support)
 curl -X POST http://localhost:3333/run-file \
   -H "x-api-key: your-secret" \
   -H "Content-Type: application/json" \
-  -d '{"file":"/path/to/agent.yaml"}'
+  -d '{"file": "/path/to/agent.yaml", "params": {}, "input": "run"}'
 
 # Approve a pending manual chain
 curl -X POST http://localhost:3333/approve-chain \

@@ -17,13 +17,15 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  workspaceUsers    WorkspaceUser[]
-  chats             Chat[]
-  activityLogs      ActivityLog[]
-  createdWorkspaces Workspace[] @relation("WorkspaceCreator")
-  apiKeys           ApiKey[]    @relation("ApiKeyCreator")
-  createdAgents        Agent[]     @relation("AgentCreator")
-  triggeredAgentRuns   AgentRun[]  @relation("AgentRunTrigger")
+  workspaceUsers       WorkspaceUser[]
+  chats                Chat[]
+  activityLogs         ActivityLog[]
+  createdWorkspaces    Workspace[]    @relation("WorkspaceCreator")
+  apiKeys              ApiKey[]       @relation("ApiKeyCreator")
+  createdAgents        Agent[]        @relation("AgentCreator")
+  triggeredAgentRuns   AgentRun[]     @relation("AgentRunTrigger")
+  createdProjects      Project[]      @relation("ProjectCreator")
+  triggeredProjectRuns ProjectRun[]   @relation("ProjectRunTrigger")
 }
 
 model ApiKey {
@@ -49,9 +51,9 @@ model Setting {
 }
 
 model Workspace {
-  id           Int      @id @default(autoincrement())
-  slug         String   @unique
-  name         String
+  id                    Int      @id @default(autoincrement())
+  slug                  String   @unique
+  name                  String
   systemPrompt          String?
   temperature           Float    @default(0.7)
   chatHistory           Int      @default(20)
@@ -61,56 +63,21 @@ model Workspace {
   vectorDbConfig        String?
   embedEnabled          Boolean  @default(false)
   dlpEnabled            Boolean  @default(false)
-  defaultAgentMaxRounds Int      @default(25)
-  maxChainDepth         Int      @default(5)
-  agentMemoryEnabled    Boolean  @default(false)
-  agentMemoryRuns       Int      @default(5)
+  agentConfig           String?  // JSON: { connectors: [...] } — inline connector credentials
   createdByUserId       Int?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  createdBy  User?          @relation("WorkspaceCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  users      WorkspaceUser[]
-  documents  Document[]
-  chats      Chat[]
-  threads    Thread[]
-  connectors    Connector[]
-  agents        Agent[]
-  agentShares      AgentShare[]
-  connectorShares  ConnectorShare[]
-  chainApprovals ChainApproval[]
-  kbSharesAsSource WorkspaceKBShare[] @relation("KBShareSource")
-  kbSharesAsTarget WorkspaceKBShare[] @relation("KBShareTarget")
+  createdBy        User?               @relation("WorkspaceCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  users            WorkspaceUser[]
+  documents        Document[]
+  chats            Chat[]
+  threads          Thread[]
+  agents           Agent[]
+  projects         Project[]
+  kbSharesAsSource WorkspaceKBShare[]  @relation("KBShareSource")
+  kbSharesAsTarget WorkspaceKBShare[]  @relation("KBShareTarget")
   dlpPolicies      WorkspaceDlpPolicy[]
-}
-
-model Connector {
-  id           Int       @id @default(autoincrement())
-  workspaceId  Int
-  name         String    @unique
-  slug         String?   @unique
-  type         String
-  config       String?
-  authConfig   String?
-  status       String    @default("active")
-  lastTestedAt DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  syncs     ConnectorSync[]
-  shares    ConnectorShare[]
-}
-
-model ConnectorSync {
-  id          Int       @id @default(autoincrement())
-  connectorId Int
-  status      String
-  message     String?
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
-
-  connector Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
 }
 
 model Thread {
@@ -139,44 +106,41 @@ model WorkspaceUser {
 }
 
 model Document {
-  id                Int      @id @default(autoincrement())
-  uid               String   @unique
-  name              String
-  type              String
-  size              Int?
-  workspaceId       Int
-  chunkCount        Int      @default(0)
-  status            String   @default("queued")
-  cancelRequested   Boolean  @default(false)
-  chunksProcessed   Int      @default(0)
-  totalChunks       Int      @default(0)
-  errorMessage      String?
-  sourcePath        String?
-  batchId           String?
-  connectorId       Int?
-  uploadedByUserId  Int?
-  embeddingTokens   Int      @default(0)
-  embeddingModel    String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  uid              String   @unique
+  name             String
+  type             String
+  size             Int?
+  workspaceId      Int
+  chunkCount       Int      @default(0)
+  status           String   @default("queued")
+  cancelRequested  Boolean  @default(false)
+  chunksProcessed  Int      @default(0)
+  totalChunks      Int      @default(0)
+  errorMessage     String?
+  sourcePath       String?
+  batchId          String?
+  uploadedByUserId Int?
+  embeddingTokens  Int      @default(0)
+  embeddingModel   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 model Chat {
-  id           Int      @id @default(autoincrement())
-  workspaceId  Int
-  threadId     Int?
-  userId       Int?
-  role         String
-  content      String
-  sources      String?
-  toolCalls     String?
-  visualization String?
+  id            Int      @id @default(autoincrement())
+  workspaceId   Int
+  threadId      Int?
+  userId        Int?
+  role          String
+  content       String
+  sources       String?
   inputTokens   Int      @default(0)
-  outputTokens Int      @default(0)
-  model        String?
-  createdAt    DateTime @default(now())
+  outputTokens  Int      @default(0)
+  model         String?
+  createdAt     DateTime @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   thread    Thread?   @relation(fields: [threadId], references: [id], onDelete: Cascade)
@@ -195,82 +159,44 @@ model ActivityLog {
 }
 
 model Agent {
-  id              Int        @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   workspaceId     Int
   name            String
-  slug            String?   @unique
   description     String?
   systemPrompt    String?
-  workflow           String?
-  group              String?
-  nextAgent          String?
-  nextAgentCondition String?
-  chains             String?
-  connectorIds    String     @default("[]")
-  params          String     @default("[]")
-  triggerType     String     @default("manual")
-  cronExpression  String?
-  enabled         Boolean    @default(true)
-  visualize       Boolean    @default(false)
-  maxRounds       Int?
+  workflow        String?  // JSON: [{ name, content }]
+  connectorIds    String   @default("[]") // JSON: ["connection_name", ...]
+  enabled         Boolean  @default(true)
   createdByUserId Int?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy   User?        @relation("AgentCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  runs           AgentRun[]
-  shares         AgentShare[]
-  chainApprovals ChainApproval[]
-}
-
-model AgentShare {
-  id                 Int       @id @default(autoincrement())
-  agentId            Int
-  grantedWorkspaceId Int
-  createdAt          DateTime  @default(now())
-
-  agent            Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  grantedWorkspace Workspace @relation(fields: [grantedWorkspaceId], references: [id], onDelete: Cascade)
-
-  @@unique([agentId, grantedWorkspaceId])
-}
-
-model ConnectorShare {
-  id                 Int       @id @default(autoincrement())
-  connectorId        Int
-  grantedWorkspaceId Int
-  createdAt          DateTime  @default(now())
-
-  connector        Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
-  grantedWorkspace Workspace @relation(fields: [grantedWorkspaceId], references: [id], onDelete: Cascade)
-
-  @@unique([connectorId, grantedWorkspaceId])
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?     @relation("AgentCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  runs      AgentRun[]
 }
 
 model AgentRun {
-  id                        Int       @id @default(autoincrement())
-  agentId                   Int
-  triggeredByUserId         Int?
-  triggeredFromWorkspaceId  Int?
-  status                    String    @default("pending")
-  triggerType               String    @default("manual")
-  input                     String?
-  output                    String?
-  error                     String?
-  cancelRequested           Boolean   @default(false)
-  startedAt                 DateTime  @default(now())
-  completedAt               DateTime?
+  id                       Int       @id @default(autoincrement())
+  agentId                  Int
+  triggeredByUserId        Int?
+  status                   String    @default("pending")
+  input                    String?
+  output                   String?
+  error                    String?
+  cancelRequested          Boolean   @default(false)
+  startedAt                DateTime  @default(now())
+  completedAt              DateTime?
 
   agent       Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
   triggeredBy User? @relation("AgentRunTrigger", fields: [triggeredByUserId], references: [id], onDelete: SetNull)
 }
 
 model WorkspaceKBShare {
-  id                 Int      @id @default(autoincrement())
-  sourceWorkspaceId  Int
-  targetWorkspaceId  Int
-  createdAt          DateTime @default(now())
+  id                Int      @id @default(autoincrement())
+  sourceWorkspaceId Int
+  targetWorkspaceId Int
+  createdAt         DateTime @default(now())
 
   sourceWorkspace Workspace @relation("KBShareSource", fields: [sourceWorkspaceId], references: [id], onDelete: Cascade)
   targetWorkspace Workspace @relation("KBShareTarget", fields: [targetWorkspaceId], references: [id], onDelete: Cascade)
@@ -278,31 +204,12 @@ model WorkspaceKBShare {
   @@unique([sourceWorkspaceId, targetWorkspaceId])
 }
 
-model ChainApproval {
-  id              Int       @id @default(autoincrement())
-  workspaceId     Int
-  sourceAgentId   Int
-  sourceRunId     Int
-  threadId        Int?
-  nextAgentSlug   String
-  condition       String
-  runOutput       String?
-  status          String    @default("pending")
-  decidedAt       DateTime?
-  decidedByUserId Int?
-  createdAt       DateTime  @default(now())
-  timeoutAt       DateTime
-
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  sourceAgent Agent     @relation(fields: [sourceAgentId], references: [id], onDelete: Cascade)
-}
-
 model DlpPolicy {
   id        Int      @id @default(autoincrement())
   name      String
-  category  String   // "passwords" | "ip_addresses" | "api_keys" | "credit_cards" | "custom"
-  pattern   String   // regex string
-  action    String   @default("block")  // "block" | "warn" | "redact" | "audit"
+  category  String
+  pattern   String
+  action    String   @default("block")
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now())
 
@@ -321,19 +228,6 @@ model WorkspaceDlpPolicy {
   @@unique([workspaceId, policyId])
 }
 
-model ConnectionMaster {
-  id          Int      @id @default(autoincrement())
-  key         String   @unique
-  label       String
-  category    String
-  color       String
-  initial     String
-  adapterType String?
-  fields      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
 model DlpViolation {
   id            Int      @id @default(autoincrement())
   policyId      Int
@@ -345,4 +239,56 @@ model DlpViolation {
   workspaceName String?
   snippet       String
   createdAt     DateTime @default(now())
+}
+
+// ── Projects (oe-runtime compatible) ─────────────────────────────────────────
+
+model Project {
+  id              Int      @id @default(autoincrement())
+  workspaceId     Int
+  name            String
+  description     String?
+  manifest        String?  // oe-project.json as JSON string
+  oeConfig        String?  // oe-config.json as JSON string (connectors only used; LLM comes from platform)
+  createdByUserId Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?        @relation("ProjectCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  agents    ProjectAgent[]
+  runs      ProjectRun[]
+}
+
+model ProjectAgent {
+  id          Int      @id @default(autoincrement())
+  projectId   Int
+  name        String
+  description String?
+  fileName    String   @default("agent.yaml")
+  yamlContent String   @default("")
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  runs    ProjectRun[]
+}
+
+model ProjectRun {
+  id                Int       @id @default(autoincrement())
+  projectId         Int
+  agentId           Int?
+  triggeredByUserId Int?
+  status            String    @default("pending")
+  input             String?
+  output            String?
+  error             String?
+  cancelRequested   Boolean   @default(false)
+  startedAt         DateTime  @default(now())
+  completedAt       DateTime?
+
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  agent       ProjectAgent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  triggeredBy User?         @relation("ProjectRunTrigger", fields: [triggeredByUserId], references: [id], onDelete: SetNull)
 }

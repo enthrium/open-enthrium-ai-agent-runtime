@@ -38,6 +38,7 @@ const onedrive       = require("./adapters/onedrive");
 const dropbox        = require("./adapters/dropbox");
 const box            = require("./adapters/box");
 const ssh            = require("./adapters/ssh");
+const shell          = require("./adapters/shell");
 const sftp           = require("./adapters/sftp");
 const s3             = require("./adapters/s3");
 const kafka          = require("./adapters/kafka");
@@ -159,6 +160,10 @@ const ADAPTERS = {
   github:        github,
   "zoho-mail":   zohoMail,
   ssh:           ssh,
+  // Local shell execution
+  shell:         shell,
+  "local-exec":  shell,
+  "local-shell": shell,
   // Search — baseUrl + bearerToken in oe-config.json, endpoints in agent.yaml
   "perplexity-search": restApi,
   "perplexity":        restApi,

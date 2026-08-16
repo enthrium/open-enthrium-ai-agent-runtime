@@ -1,6 +1,6 @@
 {
     "name": "@open-enthrium/server",
-    "version": "1.7.2",
+    "version": "1.7.3",
     "main":  "src/index.js",
     "scripts":  {
                     "dev":  "nodemon src/index.js",
@@ -80,7 +80,6 @@
                          "pgvector":  "^0.2.0",
                          "snowflake-sdk":  "^3.0.0",
                          "ssh2":  "^1.17.0",
-                         "swagger-ui-express":  "^5.0.1",
                          "uuid":  "^10.0.0",
                          "xlsx":  "^0.18.5"
                      },
