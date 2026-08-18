@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.7.4] — 2026-08-18
+
+### Fixed
+- **SQL database agent broken in npx/binary mode**: `registry.js` was loading the `database` adapter via auto-discovery (`_discovered["database"]`), which is always empty in compiled binaries — causing all SQL connector types (`postgresql`, `mysql`, `mssql`, `oracle`, `sqlite`, etc.) to fall through to the REST API adapter and return "Connector base URL not configured". Fixed by loading `database` via direct `require()` like all other adapters.
+
+---
+
 ## [v1.7.3] — 2026-08-16
 
 No changes to OE Runtime in this release.

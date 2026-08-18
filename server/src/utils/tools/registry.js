@@ -18,7 +18,7 @@ try {
   // Running inside a compiled binary — static ADAPTERS map below handles routing
 }
 
-const database       = _discovered["database"];
+const database       = require("./adapters/database");
 const restApi        = require("./adapters/rest-api");
 const mongodb        = require("./adapters/mongodb");
 const gmail          = require("./adapters/gmail");
