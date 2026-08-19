@@ -140,6 +140,14 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Publish @openenthrium/oe-runtime-sdk to npm
+        run: |
+          cp -r server/src server/sdk/src
+          cd server/sdk
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   update-website:
     if: github.repository == 'enthrium/open-enthrium-ai-agent-runtime'
     runs-on: ubuntu-latest

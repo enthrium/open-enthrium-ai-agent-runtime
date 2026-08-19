@@ -21,6 +21,7 @@ Open Enthrium AI Agent Runtime (OE Runtime) is a standalone, cross-platform bina
 - **45+ connector categories.** PostgreSQL, MySQL, MongoDB, S3, Slack, GitHub, SSH, REST API, Kafka, and more — all built in.
 - **Agent chains.** Chain agents together in YAML — auto chains fire in sequence; manual chains pause for human approval in CLI (y/n prompt), HTTP (`/approve-chain`), or any MCP-enabled AI chat (`approve_chain` tool).
 - **HTTP server mode.** `--serve` turns the runtime into a persistent API server any app can call.
+- **SDK.** `@openenthrium/oe-runtime-sdk` lets you embed agent execution directly inside your Node.js app — same engine, no subprocess, no HTTP call. `npm install @openenthrium/oe-runtime-sdk`
 - **Messaging platform integration.** Receive messages from Telegram, Slack, WhatsApp, Teams and run agents in response — same YAML agents, same connectors, universal command language (`/run`, `/agents`, `/approve`, `/status`).
 - **Project system.** `oe-project.json` registers multiple agents by name, sets a default agent, and links projects together — one config, many agents.
 - **Self-hosted.** Runs entirely on your own machine. No call-home. Own your data.
@@ -362,6 +363,27 @@ curl -X POST http://localhost:3333/command \
 | Slack | `POST /webhook/slack` | No — paste URL in Slack Event Subscriptions |
 | WhatsApp (Meta) | `POST /webhook/whatsapp` | No — paste URL in Meta Developer dashboard |
 | GitHub | `POST /webhook/github` | No — paste URL in repo webhook settings |
+
+---
+
+## Embed in Your App
+
+Need to call agents from inside a Node.js application — without spawning a subprocess or making HTTP calls? Use the **OE Runtime SDK**:
+
+```bash
+npm install @openenthrium/oe-runtime-sdk pg   # install only the connectors you need
+```
+
+```js
+const { runAgent } = require("@openenthrium/oe-runtime-sdk");
+
+const result = await runAgent("./agent.yaml", "./oe-config.json", { topic: "Q3 sales" });
+console.log(result.output);
+```
+
+Same engine. Same `agent.yaml`. Same `oe-config.json`. No subprocess overhead.
+
+→ **[`@openenthrium/oe-runtime-sdk` on npm](https://www.npmjs.com/package/@openenthrium/oe-runtime-sdk)**
 
 ---
 

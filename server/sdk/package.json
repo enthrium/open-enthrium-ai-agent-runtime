@@ -1,0 +1,64 @@
+{
+  "name": "@openenthrium/oe-runtime-sdk",
+  "version": "1.7.5",
+  "description": "OE Runtime SDK — embed AI agent execution directly in your Node.js application. Same engine as OE Runtime CLI, importable as a library.",
+  "main": "index.js",
+  "homepage": "https://www.openenthrium.com/runtime.html",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/enthrium/open-enthrium-ai-agent-runtime"
+  },
+  "keywords": [
+    "ai-agent", "llm", "openai", "anthropic", "enterprise",
+    "oe-runtime", "agent-sdk", "postgresql", "mongodb", "kafka",
+    "open-enthrium", "automation"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "axios": "^1.7.7",
+    "js-yaml": "^4.1.0",
+    "openai": "^4.67.3"
+  },
+  "peerDependencies": {
+    "@aws-sdk/client-s3": "optional",
+    "@elastic/elasticsearch": "optional",
+    "better-sqlite3": "optional",
+    "googleapis": "optional",
+    "imapflow": "optional",
+    "ioredis": "optional",
+    "kafkajs": "optional",
+    "ldapts": "optional",
+    "mongodb": "optional",
+    "mqtt": "optional",
+    "mssql": "optional",
+    "mysql2": "optional",
+    "nodemailer": "optional",
+    "oracledb": "optional",
+    "pg": "optional",
+    "snowflake-sdk": "optional",
+    "ssh2": "optional"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-s3":    { "optional": true },
+    "@elastic/elasticsearch": { "optional": true },
+    "better-sqlite3":        { "optional": true },
+    "googleapis":            { "optional": true },
+    "imapflow":              { "optional": true },
+    "ioredis":               { "optional": true },
+    "kafkajs":               { "optional": true },
+    "ldapts":                { "optional": true },
+    "mongodb":               { "optional": true },
+    "mqtt":                  { "optional": true },
+    "mssql":                 { "optional": true },
+    "mysql2":                { "optional": true },
+    "nodemailer":            { "optional": true },
+    "oracledb":              { "optional": true },
+    "pg":                    { "optional": true },
+    "snowflake-sdk":         { "optional": true },
+    "ssh2":                  { "optional": true }
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

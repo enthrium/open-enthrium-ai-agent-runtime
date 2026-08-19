@@ -6,8 +6,9 @@ const path     = require("path");
 const yaml     = require("js-yaml");
 const readline = require("readline");
 
-const engine  = require("../src/engine");
-const VERSION = require("../package.json").version;
+const engine              = require("../src/engine");
+const { prepareConnectors } = require("../src/utils/prepareConnectors");
+const VERSION             = require("../package.json").version;
 
 // ── arg parsing ──────────────────────────────────────────────────────────────
 
@@ -130,60 +131,19 @@ if (!llmConfig?.provider || !llmConfig?.apiKey) {
 // YAML lists connectors by name+type only (no secrets).
 // Config has credentials. Match by name first, then by type.
 
-function prepareConnectors(yamlConnectors, configConnectors) {
-  // Support object format { "Name": { type, ...creds } } as well as legacy array format
-  let cfgArray;
-  if (Array.isArray(configConnectors)) {
-    cfgArray = configConnectors;
-  } else if (configConnectors && typeof configConnectors === "object") {
-    cfgArray = Object.entries(configConnectors).map(([name, cfg]) => ({
-      connection_name: name,
-      connection_type: cfg.type,
-      ...cfg,
-    }));
-  } else {
-    cfgArray = [];
-  }
-
-  return (yamlConnectors || []).map((yc, i) => {
-    // Normalise YAML connector fields — accept both new (connection_*) and legacy (name/type)
-    const ycName = yc.connection_name || yc.name;
-    const ycType = yc.connection_type || yc.type;
-
-    // Match by name first, then fall back to type
-    const cc = cfgArray.find(c => (c.connection_name || c.name) === ycName)
-            || cfgArray.find(c => (c.connection_type || c.type) === ycType);
-
-    if (!cc) {
-      console.warn(`  ⚠  No config entry for connector "${ycName}" (${ycType}) — tool calls will fail`);
-      return { id: i + 1, name: ycName, type: ycType, status: "active", authConfig: "{}", config: "{}" };
+// prepareConnectors is now in src/utils/prepareConnectors.js (shared with SDK).
+// Wrap it here to preserve the CLI-specific "no config entry" warning.
+function prepareConnectorsWithWarning(yamlConnectors, configConnectors) {
+  const result = prepareConnectors(yamlConnectors, configConnectors);
+  // Warn for any connector that got empty creds (no config match)
+  (yamlConnectors || []).forEach((yc, i) => {
+    if (result[i]?.authConfig === "{}") {
+      const name = yc.connection_name || yc.name;
+      const type = yc.connection_type || yc.type;
+      console.warn(`  ⚠  No config entry for connector "${name}" (${type}) — tool calls will fail`);
     }
-
-    const { connection_name, connection_type, name, type, ...creds } = cc;
-    const resolvedName = connection_name || name || ycName;
-    const resolvedType = connection_type || type || ycType;
-
-    // Support privateKeyPath so users don't have to embed raw keys in JSON.
-    // Normalize line endings — Windows \r\n breaks ssh2 key parsing.
-    if (creds.privateKeyPath) {
-      const keyPath = creds.privateKeyPath.replace(/^~/, require("os").homedir());
-      creds.privateKey = fs.readFileSync(keyPath, "utf8").replace(/\r\n/g, "\n");
-      delete creds.privateKeyPath;
-    }
-    // Also normalize inline privateKey if provided
-    if (creds.privateKey) {
-      creds.privateKey = creds.privateKey.replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
-    }
-
-    return {
-      id:         i + 1,
-      name:       resolvedName,
-      type:       resolvedType,
-      status:     "active",
-      authConfig: JSON.stringify(creds),
-      config:     JSON.stringify(creds),
-    };
   });
+  return result;
 }
 
 // ── manual approval prompt ────────────────────────────────────────────────────
@@ -241,7 +201,7 @@ async function runChains(chains, output, currentAgentFile, depth) {
 
 async function runAgent(agentFile, inputContext, depth = 0) {
   const agentYaml  = yaml.load(fs.readFileSync(agentFile, "utf8"));
-  const connectors = prepareConnectors(agentYaml.connectors, config.connectors);
+  const connectors = prepareConnectorsWithWarning(agentYaml.connectors, config.connectors);
 
   const agentSpec = {
     systemPrompt: agentYaml.systemPrompt || agentYaml.system_prompt || agentYaml.instructions || "",

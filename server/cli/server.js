@@ -7,7 +7,8 @@ const os    = require("os");
 const https = require("https");
 const http  = require("http");
 
-const engine  = require("../src/engine");
+const engine                = require("../src/engine");
+const { prepareConnectors } = require("../src/utils/prepareConnectors");
 const VERSION = require("../package.json").version;
 
 const serverStartTime = Date.now();
@@ -62,57 +63,7 @@ function buildHistoryContext(chatKey, newText) {
   return `Conversation history:\n\n${lines.join("\n\n")}`;
 }
 
-// ── connector matching ────────────────────────────────────────────────────────
-
-function prepareConnectors(yamlConnectors, configConnectors) {
-  let cfgArray;
-  if (Array.isArray(configConnectors)) {
-    cfgArray = configConnectors;
-  } else if (configConnectors && typeof configConnectors === "object") {
-    cfgArray = Object.entries(configConnectors).map(([name, cfg]) => ({
-      connection_name: name,
-      connection_type: cfg.type,
-      ...cfg,
-    }));
-  } else {
-    cfgArray = [];
-  }
-
-  return (yamlConnectors || []).map((yc, i) => {
-    const ycName = yc.connection_name || yc.name;
-    const ycType = yc.connection_type || yc.type;
-
-    const cc = cfgArray.find(c => (c.connection_name || c.name) === ycName)
-            || cfgArray.find(c => (c.connection_type || c.type) === ycType);
-
-    if (!cc) {
-      console.warn(`  ⚠  No config entry for connector "${ycName}" (${ycType})`);
-      return { id: i + 1, name: ycName, type: ycType, status: "active", authConfig: "{}", config: "{}" };
-    }
-
-    const { connection_name, connection_type, name, type, ...creds } = cc;
-    const resolvedName = connection_name || name || ycName;
-    const resolvedType = connection_type || type || ycType;
-
-    if (creds.privateKeyPath) {
-      const keyPath = creds.privateKeyPath.replace(/^~/, os.homedir());
-      creds.privateKey = fs.readFileSync(keyPath, "utf8").replace(/\r\n/g, "\n");
-      delete creds.privateKeyPath;
-    }
-    if (creds.privateKey) {
-      creds.privateKey = creds.privateKey.replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
-    }
-
-    return {
-      id:         i + 1,
-      name:       resolvedName,
-      type:       resolvedType,
-      status:     "active",
-      authConfig: JSON.stringify(creds),
-      config:     JSON.stringify(creds),
-    };
-  });
-}
+// prepareConnectors imported from src/utils/prepareConnectors.js
 
 function buildAgentSpec(agentYaml, params, input) {
   return {
