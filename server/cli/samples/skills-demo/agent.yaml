@@ -1,0 +1,25 @@
+name: Sales Pipeline Demo
+description: "Demonstrates skills and plugins — runs local SKILL.md skills and a remote plugin"
+
+instructions: |
+  You are a sales pipeline orchestrator.
+  Coordinate the following skills and compile a final summary when all are done.
+
+# Local SKILL.md folders (relative to this file)
+# Each runs ./path/SKILL.md in sequence, output passes to the next.
+skills:
+  - path: ./prospect-researcher
+    trigger_type: auto
+  - path: ./email-drafter
+    trigger_type: manual           # pauses for approval before drafting
+
+# Remote SKILL.md from GitHub or any public URL
+# OE fetches the SKILL.md and executes it like a local skill.
+plugins:
+  - url: https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring
+    trigger_type: auto
+
+# Chain to another agent.yaml after all skills + plugins complete (optional)
+# chains:
+#   - next_agent: ./send-report.yaml
+#     trigger_type: manual

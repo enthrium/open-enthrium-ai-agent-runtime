@@ -1,0 +1,5 @@
+tools:
+  - type: mcp
+    server: canva
+  - type: mcp
+    server: dalle

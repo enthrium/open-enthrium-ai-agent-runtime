@@ -1,0 +1,70 @@
+name: OE Skills Collection
+description: "Open-Enthrium skills collection — 20 ready-to-use SKILL.md agents covering email, databases, messaging, cloud, media, and more. Each skill runs on Claude, Codex, or OE."
+instructions: |
+  You are the Open-Enthrium skills orchestrator.
+  Route user requests to the most relevant skill below.
+  Each skill is self-contained and declares its own connector requirements.
+
+skills:
+  - path: ./hello-world
+    trigger_type: manual
+
+  - path: ./email
+    trigger_type: manual
+
+  - path: ./sql-databases
+    trigger_type: manual
+
+  - path: ./ssh
+    trigger_type: manual
+
+  - path: ./cloud-drives
+    trigger_type: manual
+
+  - path: ./web-search
+    trigger_type: manual
+
+  - path: ./team-messaging
+    trigger_type: manual
+
+  - path: ./productivity-crm
+    trigger_type: manual
+
+  - path: ./rest-api
+    trigger_type: manual
+
+  - path: ./image-generation
+    trigger_type: manual
+
+  - path: ./nosql-cache
+    trigger_type: manual
+
+  - path: ./telegram
+    trigger_type: manual
+
+  - path: ./ocr-vision
+    trigger_type: manual
+
+  - path: ./local-exec
+    trigger_type: manual
+
+  - path: ./graphql
+    trigger_type: manual
+
+  - path: ./message-queues
+    trigger_type: manual
+
+  - path: ./iot-messaging
+    trigger_type: manual
+
+  - path: ./music-generation
+    trigger_type: manual
+
+  - path: ./speech-audio
+    trigger_type: manual
+
+  - path: ./video-generation
+    trigger_type: manual
+
+  - path: ./blockchain-web3
+    trigger_type: manual

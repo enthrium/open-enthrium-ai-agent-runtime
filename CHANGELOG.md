@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.8.0] — 2026-08-25
+
+### Added
+- **SKILL.md parser** (`parseSkillMd`): native SKILL.md execution — frontmatter drives agent config (`name`, `description`, `params`, `max-rounds`, `allowed-tools`); `## Heading` sections become workflow steps; body text becomes system prompt.
+- **Skills runner** (`runSkills`): executes the `skills:` block in `agent.yaml` — each entry resolves `SKILL.md` relative to the agent file, runs it sequentially, and pipes output as context to the next skill. `trigger_type: manual` prompts for approval before each run.
+- **Plugins runner** (`runPlugins`): executes the `plugins:` block — fetches remote SKILL.md from any URL (GitHub `tree/` links auto-converted to `raw.githubusercontent.com`) and runs each as a skill.
+- **Remote SKILL.md fetcher** (`fetchUrl` / `toRawUrl`): HTTP(S) fetch with redirect follow; GitHub tree URL normalisation.
+- **Auto-discovery of `oe-config.json`**: `--config` is now optional. CLI checks (1) sibling of agent file, then (2) cwd. Falls back to a clear error naming both locations searched.
+- **Folder as agent argument**: if the first argument is a directory, resolves `agent.yaml` inside it automatically.
+- **Skills library** — 18 categories under `skills/`: `hello-world`, `email`, `blockchain-web3`, `cloud-drives`, `graphql`, `image-generation`, `iot-messaging`, `local-exec`, `message-queues`, `music-generation`, `nosql-cache`, `ocr-vision`, `productivity-crm`, `rest-api`, `speech-audio`, `sql-databases`, `ssh`, `team-messaging`, `telegram`, `video-generation`, `web-search`. Each has `SKILL.md` + `agents/openai.yaml`.
+- **Skills demo sample** (`samples/skills-demo/`): two-skill pipeline — `prospect-researcher` → `email-drafter` with chained output.
+
+### Changed
+- **Post-agent pipeline**: after chains, CLI now runs skills then plugins, returning the final pipeline output.
+- **Missing config error**: reports both directories searched; instructs to use `--config <path>`.
+
+---
+
 ## [v1.7.5] — 2026-08-19
 
 ### Added

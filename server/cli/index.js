@@ -3,6 +3,7 @@
 
 const fs       = require("fs");
 const path     = require("path");
+const https    = require("https");
 const yaml     = require("js-yaml");
 const readline = require("readline");
 
@@ -91,8 +92,8 @@ if (args.includes("--serve") || _serverEnabledViaCfg) {
 
 // ── single-run mode ──────────────────────────────────────────────────────────
 
-const agentFile   = args[0];
-let   configFile  = "oe-config.json";
+let   agentArg    = args[0];
+let   configFile  = null;          // resolved below after we know agentFile dir
 let   inputMsg    = null;
 const paramValues = {};
 
@@ -107,6 +108,26 @@ for (let i = 1; i < args.length; i++) {
   }
 }
 
+// ── resolve agent file — accept folder or .yaml path ─────────────────────────
+// If a folder is passed, look for agent.yaml inside it.
+
+let agentFile = agentArg;
+if (fs.existsSync(agentArg) && fs.statSync(agentArg).isDirectory()) {
+  agentFile = path.join(agentArg, "agent.yaml");
+}
+
+// ── resolve oe-config.json ────────────────────────────────────────────────────
+// Priority: --config flag → same folder as agent.yaml → cwd
+
+if (!configFile) {
+  const agentDir     = path.dirname(path.resolve(agentFile));
+  const siblingCfg   = path.join(agentDir, "oe-config.json");
+  const cwdCfg       = path.join(process.cwd(), "oe-config.json");
+  configFile = fs.existsSync(siblingCfg) ? siblingCfg
+             : fs.existsSync(cwdCfg)     ? cwdCfg
+             : siblingCfg;               // will fail below with a clear error
+}
+
 // ── load files ───────────────────────────────────────────────────────────────
 
 if (!fs.existsSync(agentFile)) {
@@ -114,8 +135,9 @@ if (!fs.existsSync(agentFile)) {
   process.exit(1);
 }
 if (!fs.existsSync(configFile)) {
-  console.error(`\nError: config file not found: ${configFile}`);
-  console.error(`Download a starter kit from the Sample Library: https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip\n`);
+  console.error(`\nError: oe-config.json not found.`);
+  console.error(`  Looked in: ${path.dirname(path.resolve(agentFile))} and ${process.cwd()}`);
+  console.error(`  Use --config <path> to specify a custom location.\n`);
   process.exit(1);
 }
 
@@ -197,6 +219,220 @@ async function runChains(chains, output, currentAgentFile, depth) {
   }
 }
 
+// ── SKILL.md parser ───────────────────────────────────────────────────────────
+// Parses SKILL.md content into an agentSpec the engine understands.
+// Text before first ## heading → systemPrompt.
+// Each ## Section → workflow step.
+
+function parseSkillMd(content, label = "SKILL.md") {
+  const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!fmMatch) throw new Error(`Invalid SKILL.md (missing frontmatter): ${label}`);
+
+  const front = yaml.load(fmMatch[1]) || {};
+  const body  = fmMatch[2] || "";
+
+  if (!front.name)        throw new Error(`SKILL.md missing required field: name (${label})`);
+  if (!front.description) throw new Error(`SKILL.md missing required field: description (${label})`);
+
+  // Split body on ## headings — preamble becomes system prompt, headings become steps
+  const parts    = body.split(/^## /m);
+  const preamble = parts[0].trim();
+  const steps    = parts.slice(1).map(s => {
+    const nl      = s.indexOf("\n");
+    const name    = nl > -1 ? s.slice(0, nl).trim() : s.trim();
+    const content = nl > -1 ? s.slice(nl + 1).trim() : "";
+    return { name, content };
+  });
+
+  const allowedTools = front["allowed-tools"]
+    ? front["allowed-tools"].split(/\s+/).filter(Boolean)
+    : null;
+
+  return {
+    name:         front.name,
+    description:  front.description,
+    systemPrompt: preamble || body.trim(),
+    workflow:     steps,
+    params:       front.params || [],
+    paramValues:  {},
+    maxRounds:    front["max-rounds"] || 25,
+    allowedTools,
+  };
+}
+
+// ── All connectors from oe-config.json (for skills / plugins) ─────────────────
+// Skills declare allowed-tools, not connectors. We give them all configured
+// connectors (reusing prepareConnectors so the engine gets the right format)
+// and let allowed-tools filter them down.
+
+function allConnectorsFromConfig() {
+  const all = config.connectors;
+  if (!all?.length) return [];
+  // Pass config connectors as both yaml declarations and credentials —
+  // prepareConnectors will match each entry to itself and produce the correct engine format.
+  return prepareConnectors(all, all);
+}
+
+// ── Remote SKILL.md fetcher ────────────────────────────────────────────────────
+// Converts github.com/…/tree/… URLs to raw.githubusercontent.com URLs automatically.
+
+function toRawUrl(url) {
+  const m = url.match(/github\.com\/([^/]+\/[^/]+)\/tree\/([^/]+)\/(.*)/);
+  if (m) return `https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}/SKILL.md`;
+  return url.endsWith(".md") ? url : url.replace(/\/?$/, "/SKILL.md");
+}
+
+function fetchUrl(url) {
+  return new Promise((resolve, reject) => {
+    const rawUrl = toRawUrl(url);
+    https.get(rawUrl, res => {
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        return fetchUrl(res.headers.location).then(resolve).catch(reject);
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP ${res.statusCode} fetching: ${rawUrl}`));
+      }
+      let data = "";
+      res.on("data", chunk => { data += chunk; });
+      res.on("end",  () => resolve(data));
+    }).on("error", reject);
+  });
+}
+
+// ── Run a parsed SKILL.md spec ─────────────────────────────────────────────────
+
+async function runSkillSpec(skillSpec, label, inputContext) {
+  const all        = allConnectorsFromConfig();
+  const connectors = skillSpec.allowedTools
+    ? all.filter(c => skillSpec.allowedTools.some(t =>
+        t === c.type || t === c.name ||
+        t.startsWith(`mcp__${c.name.toLowerCase().replace(/\s+/g, "_")}`)
+      ))
+    : all;
+
+  const agentSpec = {
+    ...skillSpec,
+    paramValues,
+    input: inputContext
+      ? `Context from previous step:\n\n${inputContext}\n\nNow execute your task.`
+      : inputMsg,
+  };
+
+  const line = "─".repeat(52);
+  console.log(`\n${line}`);
+  console.log(`  🧩  Skill: ${label}`);
+  if (skillSpec.description) console.log(`      ${skillSpec.description}`);
+  console.log(`      LLM   ${llmConfig.provider} / ${llmConfig.model || "default"}`);
+  if (connectors.length) {
+    console.log(`      Tools ${connectors.map(c => `${c.name} (${c.type})`).join(", ")}`);
+  }
+  console.log(`${line}\n`);
+
+  const { output } = await engine.run(agentSpec, llmConfig, connectors, {
+    onToolCall:   (name)         => console.log(`  🔧  ${name}`),
+    onToolResult: (name, result) => console.log(`      ↳ ${result.slice(0, 300)}${result.length > 300 ? "…" : ""}`),
+    onError:      (err)          => { throw err; },
+  });
+
+  console.log(`\n${line}\n`);
+  console.log(output);
+  console.log(`\n✅  Skill done — ${label}\n`);
+
+  return output;
+}
+
+// ── Skills runner — agent.yaml skills: block ───────────────────────────────────
+// Each entry: { path: "./skill-folder", trigger_type: "auto" | "manual" }
+// Resolves ./skill-folder/SKILL.md relative to the parent agent file.
+
+async function runSkills(skills, output, currentAgentFile, depth) {
+  const MAX_DEPTH = 5;
+  if (!skills?.length) return output;
+  if (depth >= MAX_DEPTH) {
+    console.warn(`\n  ⚠  Max skill depth (${MAX_DEPTH}) reached — stopping`);
+    return output;
+  }
+
+  let lastOutput = output;
+
+  for (const skill of skills) {
+    const skillPath   = skill.path;
+    const triggerType = skill.trigger_type || skill.triggerType || "auto";
+    if (!skillPath) continue;
+
+    const label    = path.basename(skillPath);
+    const fullPath = path.resolve(path.dirname(path.resolve(currentAgentFile)), skillPath, "SKILL.md");
+
+    console.log(`\n${"─".repeat(52)}`);
+    console.log(`  🧩  Skill   : ${label}`);
+    console.log(`      Trigger : ${triggerType}`);
+
+    if (triggerType === "manual") {
+      console.log(`      Output  : ${lastOutput.slice(0, 120)}${lastOutput.length > 120 ? "…" : ""}`);
+      const approved = await askApproval(label);
+      if (!approved) { console.log(`  ⏭  Skill skipped\n`); continue; }
+    }
+
+    if (!fs.existsSync(fullPath)) {
+      console.warn(`  ⚠  SKILL.md not found: ${fullPath}`);
+      continue;
+    }
+
+    const skillSpec = parseSkillMd(fs.readFileSync(fullPath, "utf8"), fullPath);
+    lastOutput      = await runSkillSpec(skillSpec, label, lastOutput);
+  }
+
+  return lastOutput;
+}
+
+// ── Plugins runner — agent.yaml plugins: block ─────────────────────────────────
+// Each entry: { url: "https://github.com/…", trigger_type: "auto" | "manual" }
+// Fetches SKILL.md from the URL and executes it.
+
+async function runPlugins(plugins, output, depth) {
+  const MAX_DEPTH = 5;
+  if (!plugins?.length) return output;
+  if (depth >= MAX_DEPTH) {
+    console.warn(`\n  ⚠  Max plugin depth (${MAX_DEPTH}) reached — stopping`);
+    return output;
+  }
+
+  let lastOutput = output;
+
+  for (const plugin of plugins) {
+    const url         = plugin.url;
+    const triggerType = plugin.trigger_type || plugin.triggerType || "auto";
+    if (!url) continue;
+
+    const label = url.split("/").filter(Boolean).slice(-2).join("/");
+
+    console.log(`\n${"─".repeat(52)}`);
+    console.log(`  🔌  Plugin  : ${label}`);
+    console.log(`      URL     : ${url}`);
+    console.log(`      Trigger : ${triggerType}`);
+
+    if (triggerType === "manual") {
+      console.log(`      Output  : ${lastOutput.slice(0, 120)}${lastOutput.length > 120 ? "…" : ""}`);
+      const approved = await askApproval(label);
+      if (!approved) { console.log(`  ⏭  Plugin skipped\n`); continue; }
+    }
+
+    let content;
+    try {
+      console.log(`      Fetching SKILL.md…`);
+      content = await fetchUrl(url);
+    } catch (err) {
+      console.warn(`  ⚠  Failed to fetch plugin: ${err.message}`);
+      continue;
+    }
+
+    const skillSpec = parseSkillMd(content, url);
+    lastOutput      = await runSkillSpec(skillSpec, label, lastOutput);
+  }
+
+  return lastOutput;
+}
+
 // ── agent runner ──────────────────────────────────────────────────────────────
 
 async function runAgent(agentFile, inputContext, depth = 0) {
@@ -245,10 +481,12 @@ async function runAgent(agentFile, inputContext, depth = 0) {
   console.log(output);
   console.log(`\n✅  Done${depth > 0 ? ` — ${agentYaml.name || path.basename(agentFile)}` : ""}\n`);
 
-  // Process chains after this agent completes
+  // Process chains → skills → plugins after this agent completes
   await runChains(agentYaml.chains, output, agentFile, depth + 1);
+  let pipelineOutput = await runSkills(agentYaml.skills, output, agentFile, depth + 1);
+  pipelineOutput     = await runPlugins(agentYaml.plugins, pipelineOutput, depth + 1);
 
-  return output;
+  return pipelineOutput;
 }
 
 // ── kick off ──────────────────────────────────────────────────────────────────

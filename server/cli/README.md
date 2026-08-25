@@ -11,6 +11,7 @@
 [![Linux](https://img.shields.io/badge/Linux-Download-E95420?logo=linux&logoColor=white)](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-linux)
 [![macOS](https://img.shields.io/badge/macOS-Download-000000?logo=apple&logoColor=white)](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-macos)
 [![npm](https://img.shields.io/npm/v/@openenthrium/oe-runtime?color=4f46e5&label=npm)](https://www.npmjs.com/package/@openenthrium/oe-runtime)
+[![SDK](https://img.shields.io/npm/v/@openenthrium/oe-runtime-sdk?color=4f46e5&label=sdk)](https://www.npmjs.com/package/@openenthrium/oe-runtime-sdk)
 [![Website](https://img.shields.io/badge/Website-openenthrium.com-4f46e5)](https://www.openenthrium.com)
 [![Discord](https://img.shields.io/badge/Discord-Community-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/vWsZ24Msn)
 
@@ -315,6 +316,57 @@ curl -X POST http://localhost:3333/approve-chain \
 
 ---
 
+## Embed in Your App (Node.js SDK)
+
+Skip the CLI and HTTP layer entirely — import OE Runtime directly into any Node.js application.
+
+```bash
+npm install @openenthrium/oe-runtime-sdk
+```
+
+**Run an agent from files:**
+
+```js
+const { runAgent } = require("@openenthrium/oe-runtime-sdk");
+
+const result = await runAgent(
+  "./agents/sales-report.yaml",    // agent YAML path
+  "./oe-config.json",              // config with LLM key + connector creds
+  { company: "Acme Corp" },        // optional params (substitutes {{company}})
+  {
+    onToolCall:   (name)         => console.log(`calling ${name}`),
+    onToolResult: (name, result) => console.log(`  → ${result.slice(0, 200)}`),
+  }
+);
+
+console.log(result.output);
+```
+
+**Run an agent from objects (no files needed):**
+
+```js
+const { runAgentFromObject } = require("@openenthrium/oe-runtime-sdk");
+
+const agentYaml = {
+  name: "Quick Summary",
+  instructions: "Summarise the latest sales data and return the highlights.",
+  connectors: [{ connection_name: "Sales DB", connection_type: "postgresql" }],
+};
+
+const config = {
+  llm: { provider: "anthropic", apiKey: process.env.ANTHROPIC_KEY, model: "claude-opus-5" },
+  connectors: [{ connection_name: "Sales DB", connection_type: "postgresql", host: "...", database: "sales", user: "...", password: "..." }],
+};
+
+const { output } = await runAgentFromObject(agentYaml, config, {}, {});
+```
+
+The SDK uses the same engine as the CLI and HTTP server — the same `agent.yaml` runs on all three surfaces with zero changes. Connector packages (`pg`, `mongodb`, `mysql2`, etc.) are optional peer dependencies; install only what you use.
+
+→ [npm package](https://www.npmjs.com/package/@openenthrium/oe-runtime-sdk)
+
+---
+
 ## Project System
 
 `oe-project.json` sits alongside `oe-config.json` and registers multiple agents by name — so any interface (Telegram, Slack, HTTP, MCP) can invoke them by name rather than file path.
@@ -480,6 +532,7 @@ OE Agent Runtime is the open-source standalone execution layer of the [Open Enth
 |---|---|
 | 🖥️ **Platform** | [open-enthrium-ai-platform](https://github.com/enthrium/open-enthrium-ai-platform) — full web app with workspaces, RAG, Agent Builder, DLP |
 | 🔌 **MCP Server** | [open-enthrium-ai-mcp-server](https://github.com/enthrium/open-enthrium-ai-mcp-server) — connect Claude Code, Cursor, Windsurf to enterprise data |
+| 📦 **Node.js SDK** | [@openenthrium/oe-runtime-sdk](https://www.npmjs.com/package/@openenthrium/oe-runtime-sdk) — embed agent execution directly in your Node.js app |
 | 🌐 **Website** | [openenthrium.com](https://openenthrium.com) |
 
 ---
