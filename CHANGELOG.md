@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.8.1] — 2026-08-25
+
+### Fixed
+- **npx / binary hang when `server.enabled: true` in config**: if `oe-config.json` contained `"server": { "enabled": true }`, running `oe-runtime agent.yaml` (or `npx -y @openenthrium/oe-runtime agent.yaml`) silently booted into HTTP server mode and never exited — completely ignoring the agent-file argument. Fix: `server.enabled` in config now only auto-starts the server when **no agent file is passed** on the command line. An explicit agent-file argument always triggers single-run mode regardless of the config.
+
+---
+
 ## [v1.8.0] — 2026-08-25
 
 ### Added

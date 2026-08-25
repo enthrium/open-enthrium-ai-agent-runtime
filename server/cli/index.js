@@ -71,11 +71,16 @@ if (fs.existsSync(_earlyCfgFile)) {
   catch (e) {}
 }
 
-if ((!args.length || args.includes("--help") || args.includes("-h")) && !_serverEnabledViaCfg) usage();
+// An explicit agent-file argument always means single-run mode, even if the
+// config has server.enabled: true.  Only auto-start the server when no agent
+// file was passed on the command line.
+const _hasExplicitAgentArg = args.length > 0 && !args[0].startsWith("--");
+
+if ((!args.length || args.includes("--help") || args.includes("-h")) && !(_serverEnabledViaCfg && !_hasExplicitAgentArg)) usage();
 
 // ── serve mode ───────────────────────────────────────────────────────────────
 
-if (args.includes("--serve") || _serverEnabledViaCfg) {
+if (args.includes("--serve") || (_serverEnabledViaCfg && !_hasExplicitAgentArg)) {
   const cfgFile = _earlyCfgFile;
   if (!fs.existsSync(cfgFile)) {
     console.error(`\nError: config file not found: ${cfgFile}`);
