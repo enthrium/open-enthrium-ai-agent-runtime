@@ -368,7 +368,7 @@ async function runSkills(skills, output, currentAgentFile, depth) {
     if (!skillPath) continue;
 
     const label    = path.basename(skillPath);
-    const fullPath = path.resolve(path.dirname(path.resolve(currentAgentFile)), skillPath, "SKILL.md");
+    const fullPath = path.join(path.dirname(currentAgentFile), skillPath, "SKILL.md");
 
     console.log(`\n${"─".repeat(52)}`);
     console.log(`  🧩  Skill   : ${label}`);

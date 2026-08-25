@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.8.3] — 2026-08-25
+
+### Fixed
+- **SKILL.md not found in binary (npx / compiled exe)**: inside a `pkg`-compiled binary, `path.resolve` on an already-absolute Windows path (e.g. `E:\project\agent.yaml`) was incorrectly treated as relative to the binary's internal snapshot directory, producing broken paths like `npm-cache/.../oe-runtime/bin/server/E:\project\SKILL.md`. Fixed by switching `runSkills` to `path.join(path.dirname(currentAgentFile), ...)` — `currentAgentFile` is already absolute at this point (resolved at startup) so no re-resolve is needed.
+
+---
+
 ## [v1.8.2] — 2026-08-25
 
 ### Fixed
