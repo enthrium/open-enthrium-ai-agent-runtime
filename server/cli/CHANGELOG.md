@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.8.2] — 2026-08-25
+
+### Fixed
+- **SKILL.md not found when running via npx**: agent file path is now resolved to an absolute path immediately on startup. Previously, `npx` internally changed the working directory, causing all subsequent `path.resolve` calls inside `runSkills` and `runPlugins` to resolve relative paths against the npm cache directory instead of the user's cwd — producing a broken path like `npm-cache/.../oe-runtime/bin/server/E:\user\project\SKILL.md`.
+
+---
+
 ## [v1.8.1] — 2026-08-25
 
 ### Fixed

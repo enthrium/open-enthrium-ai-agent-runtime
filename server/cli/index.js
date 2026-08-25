@@ -116,9 +116,11 @@ for (let i = 1; i < args.length; i++) {
 // ── resolve agent file — accept folder or .yaml path ─────────────────────────
 // If a folder is passed, look for agent.yaml inside it.
 
-let agentFile = agentArg;
-if (fs.existsSync(agentArg) && fs.statSync(agentArg).isDirectory()) {
-  agentFile = path.join(agentArg, "agent.yaml");
+// Always resolve to an absolute path immediately — npx changes cwd internally,
+// so any relative path would break later path.resolve calls inside runSkills/runPlugins.
+let agentFile = path.resolve(agentArg);
+if (fs.existsSync(agentFile) && fs.statSync(agentFile).isDirectory()) {
+  agentFile = path.join(agentFile, "agent.yaml");
 }
 
 // ── resolve oe-config.json ────────────────────────────────────────────────────
