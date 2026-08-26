@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.8.4] — 2026-08-26
+
+### Fixed
+- **SDK crashes when installed standalone**: `registry.js` bare `require()` calls for optional adapters replaced with `tryRequire()` — missing peer deps no longer crash the module at load time.
+
+---
+
 ## [v1.8.3] — 2026-08-25
 
 ### Fixed

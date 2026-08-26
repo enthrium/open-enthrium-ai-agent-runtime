@@ -18,36 +18,38 @@ try {
   // Running inside a compiled binary — static ADAPTERS map below handles routing
 }
 
-const database       = require("./adapters/database");
-const restApi        = require("./adapters/rest-api");
-const mongodb        = require("./adapters/mongodb");
-const gmail          = require("./adapters/gmail");
-const slack          = require("./adapters/slack");
-const jira           = require("./adapters/jira");
-const confluence     = require("./adapters/confluence");
-const notion         = require("./adapters/notion");
-const hubspot        = require("./adapters/hubspot");
-const freshdesk      = require("./adapters/freshdesk");
-const zendesk        = require("./adapters/zendesk");
-const github         = require("./adapters/github");
-const zohoMail       = require("./adapters/zoho-mail");
-const gdrive         = require("./adapters/gdrive");
-const redis          = require("./adapters/redis");
-const elasticsearch  = require("./adapters/elasticsearch");
-const onedrive       = require("./adapters/onedrive");
-const dropbox        = require("./adapters/dropbox");
-const box            = require("./adapters/box");
-const ssh            = require("./adapters/ssh");
-const shell          = require("./adapters/shell");
-const sftp           = require("./adapters/sftp");
-const s3             = require("./adapters/s3");
-const kafka          = require("./adapters/kafka");
-const mqttAdapter    = require("./adapters/mqtt");
-const ldap           = require("./adapters/ldap");
-const graphql        = require("./adapters/graphql");
-const web3           = require("./adapters/web3");
-const mcpClient      = require("./adapters/mcp-client");
-const filesystem     = require("./adapters/filesystem");
+function tryRequire(p) { try { return require(p); } catch { return null; } }
+
+const database       = tryRequire("./adapters/database");
+const restApi        = tryRequire("./adapters/rest-api");
+const mongodb        = tryRequire("./adapters/mongodb");
+const gmail          = tryRequire("./adapters/gmail");
+const slack          = tryRequire("./adapters/slack");
+const jira           = tryRequire("./adapters/jira");
+const confluence     = tryRequire("./adapters/confluence");
+const notion         = tryRequire("./adapters/notion");
+const hubspot        = tryRequire("./adapters/hubspot");
+const freshdesk      = tryRequire("./adapters/freshdesk");
+const zendesk        = tryRequire("./adapters/zendesk");
+const github         = tryRequire("./adapters/github");
+const zohoMail       = tryRequire("./adapters/zoho-mail");
+const gdrive         = tryRequire("./adapters/gdrive");
+const redis          = tryRequire("./adapters/redis");
+const elasticsearch  = tryRequire("./adapters/elasticsearch");
+const onedrive       = tryRequire("./adapters/onedrive");
+const dropbox        = tryRequire("./adapters/dropbox");
+const box            = tryRequire("./adapters/box");
+const ssh            = tryRequire("./adapters/ssh");
+const shell          = tryRequire("./adapters/shell");
+const sftp           = tryRequire("./adapters/sftp");
+const s3             = tryRequire("./adapters/s3");
+const kafka          = tryRequire("./adapters/kafka");
+const mqttAdapter    = tryRequire("./adapters/mqtt");
+const ldap           = tryRequire("./adapters/ldap");
+const graphql        = tryRequire("./adapters/graphql");
+const web3           = tryRequire("./adapters/web3");
+const mcpClient      = tryRequire("./adapters/mcp-client");
+const filesystem     = tryRequire("./adapters/filesystem");
 
 const ADAPTERS = {
   // SQL databases
