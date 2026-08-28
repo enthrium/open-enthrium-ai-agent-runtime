@@ -5,7 +5,7 @@ const fs   = require("fs");
 const path = require("path");
 const yaml = require("js-yaml");
 
-const samplesDir = path.resolve(__dirname, "../cli/samples");
+const samplesDir = path.resolve(__dirname, "../cli/skills");
 const outFile    = path.resolve(__dirname, "../cli/oe-runtime.postman_collection.json");
 
 // ── scan samples ─────────────────────────────────────────────────────────────

@@ -397,7 +397,7 @@ The SDK uses the same engine as the CLI and HTTP server — the same `agent.yaml
 | `agents[].default` | `true` — runs this agent when user sends a plain message (no command) |
 | `links` | Cross-project references — run agents from linked projects |
 
-See the [`my-ai-project`](samples/my-ai-project/) sample for a full working example.
+See the [`my-ai-project`](skills/oe-native-my-ai-project/) sample for a full working example.
 
 ---
 
@@ -461,7 +461,7 @@ OE Runtime automatically calls Telegram's `setWebhook` on startup. For Slack, pa
 | WhatsApp (Meta) | `POST /webhook/whatsapp` | No — paste URL in Meta Developer dashboard |
 | GitHub | `POST /webhook/github` | No — paste URL in repo webhook settings |
 
-See the [`telegram`](samples/telegram/) sample for a full working example.
+See the [`telegram`](skills/oe-native-telegram/) sample for a full working example.
 
 ---
 

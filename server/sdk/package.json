@@ -1,6 +1,6 @@
 {
   "name": "@openenthrium/oe-runtime-sdk",
-  "version": "1.8.4",
+  "version": "1.8.6",
   "description": "OE Runtime SDK — embed AI agent execution directly in your Node.js application. Same engine as OE Runtime CLI, importable as a library.",
   "main": "index.js",
   "homepage": "https://www.openenthrium.com/runtime.html",

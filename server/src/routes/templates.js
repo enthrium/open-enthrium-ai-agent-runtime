@@ -6,7 +6,7 @@ const yaml = require("js-yaml");
 
 router.use(authenticate, requireManagerOrAdmin);
 
-const SAMPLES_DIR = path.resolve(__dirname, "../../cli/samples");
+const SAMPLES_DIR = path.resolve(__dirname, "../../cli/skills");
 
 // ── List templates ─────────────────────────────────────────────────────────────
 router.get("/", (req, res) => {

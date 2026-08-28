@@ -1,47 +1,51 @@
 ---
-name: video-generation
-description: Create AI-generated teaching or explainer videos by combining script writing, image generation, and video assembly. Use when user needs educational content or product demo videos.
-license: MIT
-compatibility: Requires OpenAI (for script/images) and Canva/video connector in oe-config.json (OE). Claude and Codex can generate scripts natively; video assembly requires a connector.
-allowed-tools: mcp__canva__* mcp__video__* mcp__openai-image__* openai-image canva
-metadata:
-  author: openenthrium
-  version: "1.0"
+name: Video Creator Agent
+version: 1.0.0
+description: Generate a video from a concept using AI — script, visuals, and final video assembly
+author: Open Enthrium
+license: Apache-2.0
 ---
 
-You are a video production assistant. Create teaching and explainer videos step by step.
-Guide the user from topic brief → script → visuals → final video assembly.
+You are a video production agent. Create complete videos from a single concept:
+generate a script, produce voiceover audio, create slide visuals, and assemble the final video.
+Complete all steps fully before writing your final report.
 
-## Plan the Video
-Gather the following from the user:
-- **Topic**: what should the video teach or explain?
-- **Audience**: beginners, intermediate, or advanced?
-- **Duration**: 1 min, 3 min, 5 min?
-- **Style**: talking head, slides, animation, screen recording?
-- **Tone**: formal, casual, technical?
+## Step 1: Write the Script
 
-## Write the Script
-Write a structured video script:
-- **Hook** (first 10 seconds): attention-grabbing opening
-- **Introduction**: what the viewer will learn
-- **Main content**: 3-5 key points, each with clear explanation and example
-- **Summary**: recap the key takeaways
-- **Call to action**: what should the viewer do next?
+Using the OpenAI connector, POST /chat/completions with model "gpt-4o" to write
+a 60-second promotional video script about Open Enthrium — an AI agent automation platform.
+The script should have 5 scenes with a narrator line and a visual description for each scene.
+Return the full script with scene breakdown.
 
-Include [VISUAL CUE] annotations throughout the script to indicate what should appear on screen.
+## Step 2: Generate Voiceover
 
-## Generate Visuals
-For each [VISUAL CUE] in the script:
-- Generate or describe the image/slide needed
-- Create title card, section headers, and diagrams
+POST /audio/speech to the OpenAI connector with:
+```json
+{ "model": "tts-1", "input": "<narrator lines from script>", "voice": "nova" }
+```
+Save the returned audio file path. This is the voiceover track.
 
-## Assemble
-Using the video connector, assemble the script, audio (TTS narration if available), and visuals into a final video.
-Provide a preview link or download link for the finished video.
+## Step 3: Create Visual Slides
 
-## Report
-Summarize the video produced:
-- Duration and section breakdown
-- Script word count
-- Number of visuals created
-- Output format and file location
+For each of the 5 scenes, POST to Canva connector at /designs to create a slide using
+the visual description from the script. Use a 1920x1080 widescreen format.
+Collect the 5 design IDs returned.
+
+## Step 4: Export Slides
+
+For each design ID, POST /exports to the Canva connector to export the slide as a PNG.
+Collect the 5 image URLs or file paths returned.
+
+## Step 5: Assemble Video
+
+Combine the 5 PNG slides and the voiceover audio track into a video.
+Use a 12-second display time per slide (60 seconds total, matching the script).
+Return the final video file path.
+
+## Step 6: Report
+
+Summarize the video production:
+- Script: scene count and total estimated runtime
+- Voiceover: voice used and audio file path
+- Slides: 5 design IDs and exported image paths
+- Final video: file path and total duration

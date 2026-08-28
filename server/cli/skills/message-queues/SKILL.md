@@ -1,38 +1,47 @@
 ---
-name: message-queues
-description: Publish events to a Kafka topic and verify delivery. Use when user needs to send messages, trigger downstream systems, or test event streaming pipelines.
-license: MIT
-compatibility: Requires Kafka connector in oe-config.json (OE) or Kafka MCP connector (Claude/Codex)
-allowed-tools: mcp__kafka__* kafka
-metadata:
-  author: openenthrium
-  version: "1.0"
+name: Queue Publisher
+version: 1.0.0
+description: Publish messages to Kafka topics and consume them to verify delivery
+author: Open Enthrium
+license: Apache-2.0
 ---
 
-You are an event streaming specialist. Publish and manage messages in Kafka topics.
-Always confirm the topic name, key, and payload before publishing.
+You are a message queue agent. Publish structured messages to Kafka topics
+and verify delivery by consuming them back. Use JSON payloads with timestamps.
+Complete all steps fully before writing your report.
 
-## Discover Topics
-List available Kafka topics in the connected cluster.
-For the target topic, fetch metadata: partitions, replication factor, message count if available.
+## Step 1: List Topics
 
-## Compose the Event
-Based on the user's request, compose the event payload:
-- Set the message key (usually an entity ID like customer_id or order_id)
-- Build the JSON payload with all required fields
-- Add metadata fields: timestamp (ISO 8601), source (name of this agent), version
+List all available Kafka topics on the connected broker.
+Note the topic names, partition counts, and replication factors.
 
-## Publish the Event
-Publish the composed message to the target Kafka topic.
-Confirm: topic name, partition (if returned), offset, and timestamp of the published message.
+## Step 2: Publish Messages
 
-## Verify
-Consume the latest message from the topic to verify it was published correctly.
-Compare the consumed message with what was sent.
+Publish 5 test messages to the topic `oe-events` (create it if it doesn't exist).
+Each message should be:
+```json
+{
+  "source": "oe-runtime",
+  "event": "agent_run",
+  "run_id": "test-<N>",
+  "timestamp": "<ISO timestamp>",
+  "status": "completed"
+}
+```
+Replace `<N>` with 1 through 5. Use the `run_id` as the message key.
+Record the offset assigned to each message.
 
-## Report
-Summarize what happened:
-- Topic published to
-- Message key and payload (formatted)
-- Partition and offset
-- Verification result: message matches what was sent? YES / NO
+## Step 3: Consume Messages
+
+Consume from the beginning of `oe-events` topic.
+Read messages until all 5 published messages are received.
+Record: message key, payload, partition, and offset for each.
+
+## Step 4: Report
+
+Summarize queue activity:
+- Topics found on broker (names, partitions, replication factor)
+- Messages published: 5 messages, offsets assigned
+- Messages consumed: all 5 confirmed received
+- Latency: time between publish and consume for each message
+- Overall: **DELIVERED** or list of any missing messages

@@ -3,15 +3,15 @@ const { authenticate } = require("../middleware/auth");
 const path = require("path");
 const fs   = require("fs");
 
-const SAMPLES_DIR = path.resolve(__dirname, "../../cli/samples");
+const SKILLS_DIR = path.resolve(__dirname, "../../cli/skills");
 
-function readSamples() {
-  if (!fs.existsSync(SAMPLES_DIR)) return [];
-  return fs.readdirSync(SAMPLES_DIR)
-    .filter(f => fs.statSync(path.join(SAMPLES_DIR, f)).isDirectory())
+function readSkills() {
+  if (!fs.existsSync(SKILLS_DIR)) return [];
+  return fs.readdirSync(SKILLS_DIR)
+    .filter(f => fs.statSync(path.join(SKILLS_DIR, f)).isDirectory())
     .map(folder => {
-      const yamlPath   = path.join(SAMPLES_DIR, folder, "agent.yaml");
-      const configPath = path.join(SAMPLES_DIR, folder, "oe-config.json");
+      const yamlPath   = path.join(SKILLS_DIR, folder, "agent.yaml");
+      const configPath = path.join(SKILLS_DIR, folder, "oe-config.json");
       const yaml   = fs.existsSync(yamlPath)   ? fs.readFileSync(yamlPath,   "utf8") : null;
       const config = fs.existsSync(configPath) ? fs.readFileSync(configPath, "utf8") : null;
       return { folder, yaml, config };
@@ -19,27 +19,27 @@ function readSamples() {
     .filter(s => s.yaml);
 }
 
-// GET /api/marketplace/samples
-router.get("/samples", authenticate, (req, res) => {
+// GET /api/marketplace/skills
+router.get("/skills", authenticate, (req, res) => {
   try {
-    res.json({ samples: readSamples() });
+    res.json({ skills: readSkills() });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// GET /api/marketplace/samples/:folder/yaml
-router.get("/samples/:folder/yaml", authenticate, (req, res) => {
-  const file = path.join(SAMPLES_DIR, req.params.folder, "agent.yaml");
+// GET /api/marketplace/skills/:folder/yaml
+router.get("/skills/:folder/yaml", authenticate, (req, res) => {
+  const file = path.join(SKILLS_DIR, req.params.folder, "agent.yaml");
   if (!fs.existsSync(file)) return res.status(404).json({ error: "Not found" });
   res.setHeader("Content-Type", "text/yaml");
   res.setHeader("Content-Disposition", `attachment; filename="${req.params.folder}.yaml"`);
   res.send(fs.readFileSync(file, "utf8"));
 });
 
-// GET /api/marketplace/samples/:folder/config
-router.get("/samples/:folder/config", authenticate, (req, res) => {
-  const file = path.join(SAMPLES_DIR, req.params.folder, "oe-config.json");
+// GET /api/marketplace/skills/:folder/config
+router.get("/skills/:folder/config", authenticate, (req, res) => {
+  const file = path.join(SKILLS_DIR, req.params.folder, "oe-config.json");
   if (!fs.existsSync(file)) return res.status(404).json({ error: "Not found" });
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Content-Disposition", `attachment; filename="${req.params.folder}.oe-config.json"`);

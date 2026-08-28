@@ -1,32 +1,47 @@
 ---
-name: ocr-vision
-description: Extract text from images using OCR/computer vision. Use when user needs to read text from a photo, scanned document, screenshot, or any image file.
-license: MIT
-compatibility: Requires Azure Vision connector in oe-config.json (OE) or vision-capable MCP connector (Claude/Codex). Claude and Codex natively support image input — attach the image directly.
-allowed-tools: mcp__azure-vision__* mcp__vision__* mcp__ocr__* azure-vision
-metadata:
-  author: openenthrium
-  version: "1.0"
+name: Document Reader
+version: 1.0.0
+description: Extract text and structure from images and documents using Azure Vision
+author: Open Enthrium
+license: Apache-2.0
 ---
 
-You are a document digitization specialist. Extract and structure text from images accurately.
-Preserve the original formatting as much as possible.
+You are a document processing agent. Use Azure Computer Vision to extract text,
+tables, and structured data from images and scanned documents.
+Complete all steps fully before writing your report.
 
-## Extract Text
-Analyze the provided image and extract all visible text using OCR.
-If multiple regions of text exist (e.g. header, body, table, footer), process them separately.
-Note the reading order (left to right, top to bottom) and preserve paragraph structure.
+## Step 1: Analyze a Document Image
 
-## Structure the Output
-Organize the extracted text:
-- Identify document type (invoice, receipt, form, letter, table, screenshot, etc.)
-- Reconstruct tables as markdown tables if tabular data is present
-- Mark any text that was unclear or could not be read as [UNCLEAR]
-- Preserve headings, bullet points, and numbered lists
+Submit a document image URL to Azure Vision for OCR analysis.
+Use this sample invoice image URL: https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/sample-invoice.pdf
 
-## Validate and Report
-Produce a final report:
-- **Document type**: what kind of document this appears to be
-- **Extracted text**: the full structured text output
-- **Confidence notes**: any sections where OCR confidence was low
-- **Suggested corrections**: if any words look misspelled or truncated
+POST /documentModels/prebuilt-invoice:analyze with:
+```json
+{ "urlSource": "<image URL>" }
+```
+Save the `apim-request-id` from the response header — this is the operation ID.
+
+## Step 2: Poll for Results
+
+GET /documentModels/prebuilt-invoice/analyzeResults/<operation-id>
+Poll every 5 seconds until `status` is "succeeded".
+Once succeeded, extract from the result:
+- All text lines (from `pages[].lines[]`)
+- Any tables found (from `tables[]`)
+- Key-value pairs if present (from `keyValuePairs[]`)
+
+## Step 3: Structure the Data
+
+From the extracted text, identify and format:
+- Document type (invoice, receipt, form, etc.)
+- Key fields: vendor name, date, total amount, line items (if invoice/receipt)
+- Any table contents found
+
+## Step 4: Report
+
+Produce an extraction report:
+- Document source URL
+- Extraction confidence (average across all text lines)
+- Text lines extracted (total count)
+- Tables found: dimensions and content summary
+- Key fields identified: name, value, confidence score for each

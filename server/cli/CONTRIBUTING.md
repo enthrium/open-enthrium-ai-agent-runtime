@@ -15,7 +15,7 @@ Sample agents are the main contribution to this repo. Each sample shows a real-w
 ### Step 1 — Create your sample folder
 
 ```
-server/cli/samples/your-connector/
+server/cli/skills/your-connector/
 ├── agent.yaml        ← agent definition
 └── oe-config.json    ← redacted config with placeholder credentials
 ```
@@ -23,8 +23,8 @@ server/cli/samples/your-connector/
 ### Step 2 — Test it locally
 
 ```bash
-node server/cli/index.js server/cli/samples/your-connector/agent.yaml \
-  --config server/cli/samples/your-connector/oe-config.json
+node server/cli/index.js server/cli/skills/your-connector/agent.yaml \
+  --config server/cli/skills/your-connector/oe-config.json
 ```
 
 ### Step 3 — Open a PR

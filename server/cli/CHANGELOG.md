@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.8.6] — 2026-08-28
+
+### Changed
+- **`samples/` renamed to `skills/`** — skill library folder is now `server/cli/skills/`. All internal references updated: `generate-postman.js`, `server.js`, route handlers, Postman collection, release workflow, README, CONTRIBUTING, and CHANGELOGs.
+- **`oe-runtime-samples.zip` → `oe-runtime-skills.zip`** — release artifact renamed; `release.yml` zip command and all download links updated.
+- **Skills root files** — `agent.yaml`, `oe-project.json`, `oe-config.json` added at `skills/` root to describe the full collection.
+- **`llms.txt` updated** — version to 1.8.6, agent count, categories, `skills:` field docs, SKILL.md section, `oe-project.json` description.
+
+---
+
 ## [v1.8.5] — 2026-08-28
 
 ### Added
@@ -58,7 +68,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Auto-discovery of `oe-config.json`**: `--config` is now optional. CLI checks (1) sibling of agent file, then (2) cwd. Falls back to a clear error naming both locations searched.
 - **Folder as agent argument**: if the first argument is a directory, resolves `agent.yaml` inside it automatically.
 - **Skills library** — 18 categories under `skills/`: `hello-world`, `email`, `blockchain-web3`, `cloud-drives`, `graphql`, `image-generation`, `iot-messaging`, `local-exec`, `message-queues`, `music-generation`, `nosql-cache`, `ocr-vision`, `productivity-crm`, `rest-api`, `speech-audio`, `sql-databases`, `ssh`, `team-messaging`, `telegram`, `video-generation`, `web-search`. Each has `SKILL.md` + `agents/openai.yaml`.
-- **Skills demo sample** (`samples/skills-demo/`): two-skill pipeline — `prospect-researcher` → `email-drafter` with chained output.
+- **Skills demo sample** (`skills/skills-demo/`): two-skill pipeline — `prospect-researcher` → `email-drafter` with chained output.
 
 ### Changed
 - **Post-agent pipeline**: after chains, CLI now runs skills then plugins, returning the final pipeline output.
@@ -104,7 +114,7 @@ No changes to OE Runtime in this release.
 ## [v1.7.1] — 2026-08-13
 
 ### Added
-- **Postman collection auto-generation**: new `generate-postman.js` script reads all `samples/*/agent.yaml` files and generates `oe-runtime.postman_collection.json` at release time; wired into `sync-cli.yml` so the collection is always up to date with the latest samples
+- **Postman collection auto-generation**: new `generate-postman.js` script reads all `skills/*/agent.yaml` files and generates `oe-runtime.postman_collection.json` at release time; wired into `sync-cli.yml` so the collection is always up to date with the latest samples
 
 ### Changed
 - **`blockchain-web3` sample**: simplified agent to a single step; switched RPC endpoint to `ethereum.publicnode.com` (no API key required); added `walletAddress` placeholder to `oe-config.json`
@@ -268,8 +278,8 @@ No changes to OE Runtime in this release.
 ## [v1.3.5] — 2026-07-23
 
 ### Added
-- **20-sample library** — `cli/samples/` with ready-to-run `agent.yaml` + `oe-config.json` for SQL, NoSQL, S3, Cloud Drives, Email, Slack, SSH, REST API, GraphQL, GitHub, Kafka, Web Search, OCR, Image Generation, Speech, Video, Music, Blockchain, LDAP, MQTT
-- **`oe-runtime-samples.zip`** — all 20 starters bundled and uploaded automatically on every release
+- **20-sample library** — `cli/skills/` with ready-to-run `agent.yaml` + `oe-config.json` for SQL, NoSQL, S3, Cloud Drives, Email, Slack, SSH, REST API, GraphQL, GitHub, Kafka, Web Search, OCR, Image Generation, Speech, Video, Music, Blockchain, LDAP, MQTT
+- **`oe-runtime-skills.zip`** — all 20 starters bundled and uploaded automatically on every release
 - **`server.enabled` config flag** — activate HTTP server mode from config without `--serve` CLI flag
 - **Platform-coloured download buttons** — Windows (blue), Linux (orange), macOS (dark)
 

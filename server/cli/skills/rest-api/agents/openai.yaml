@@ -1,5 +1,0 @@
-tools:
-  - type: function
-    function:
-      name: fetch
-      description: Make HTTP requests to REST API endpoints

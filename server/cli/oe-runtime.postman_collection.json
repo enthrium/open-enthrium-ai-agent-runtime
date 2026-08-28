@@ -164,7 +164,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/blockchain-web3/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/blockchain-web3/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -199,7 +199,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/blog-to-video/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/blog-to-video/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -234,7 +234,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/cloud-drives/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/cloud-drives/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -269,7 +269,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/directory-identity/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/directory-identity/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -304,7 +304,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/email/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/email/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -339,7 +339,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/file-storage/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/file-storage/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -374,7 +374,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/graphql/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/graphql/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -409,7 +409,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/hello-world/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/hello-world/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -444,7 +444,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/image-generation/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/image-generation/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -479,7 +479,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/iot-messaging/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/iot-messaging/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -514,7 +514,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/local-exec/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/local-exec/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -549,7 +549,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/message-queues/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/message-queues/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -584,7 +584,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/music-generation/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/music-generation/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -619,7 +619,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/nosql-cache/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/nosql-cache/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -654,7 +654,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/ocr-vision/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/ocr-vision/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -946,7 +946,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/productivity-crm/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/productivity-crm/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -981,7 +981,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/rest-api/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/rest-api/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1016,7 +1016,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/skills-demo/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/skills-demo/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1051,7 +1051,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/speech-audio/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/speech-audio/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1086,7 +1086,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/sql-databases/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/sql-databases/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1121,7 +1121,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/ssh/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/ssh/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1156,7 +1156,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/team-messaging/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/team-messaging/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1191,7 +1191,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/video-generation/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/video-generation/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1226,7 +1226,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/web-search/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/web-search/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

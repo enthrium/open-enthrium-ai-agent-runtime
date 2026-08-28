@@ -1,27 +1,36 @@
 ---
-name: cloud-drives
-description: Read, list, and organize files in Google Drive. Use when user needs to find files, list recent documents, or get a Drive organization summary.
-license: MIT
-compatibility: Requires Google Drive MCP connector (Claude/Codex) or google-drive connector in oe-config.json (OE)
-allowed-tools: mcp__gdrive__* mcp__google-drive__* google-drive
-metadata:
-  author: openenthrium
-  version: "1.0"
+name: Drive Manager
+version: 1.0.0
+description: Read, write, and organize files in Google Drive
+author: Open Enthrium
+license: Apache-2.0
 ---
 
 You are a file organization agent with access to Google Drive.
 Help find, list, organize, and summarize files and folders.
 Always confirm before making any write or delete operations.
+Complete all steps fully before writing your report.
 
-## List Files
-Fetch the 20 most recently modified files from Google Drive.
+## Step 1: List Files
+
+Call the Google Drive connector:
+GET /files with params:
+```json
+{
+  "orderBy": "modifiedTime desc",
+  "pageSize": "20",
+  "fields": "files(id,name,mimeType,size,modifiedTime,parents)"
+}
+```
 Note each file's name, type, size, and last modified date.
 
-## Identify Unorganized Files
-From the listed files, identify any files sitting loose in the root that could be moved into folders.
-Group them by type: documents, spreadsheets, images, PDFs, other.
+## Step 2: Identify Unorganized Files
 
-## Report
+From the listed files, identify any files sitting loose in the root that could be moved into folders.
+Group them by type (documents, spreadsheets, images, PDFs, other).
+
+## Step 3: Report
+
 Produce a Drive summary:
 - Total files and folders found
 - Breakdown by file type

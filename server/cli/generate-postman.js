@@ -4,12 +4,12 @@
 /**
  * generate-postman.js
  *
- * Generates oe-runtime.postman_collection.json from the samples/ folder.
+ * Generates oe-runtime.postman_collection.json from the skills/ folder.
  * Run before each release:  node generate-postman.js
  *
  * Structure:
  *   - Core endpoints (Health Check, Run inline, Run from file, Approve Chain)
- *   - Samples folder — one request per samples/<name>/agent.yaml
+ *   - Skills folder — one request per skills/<name>/agent.yaml
  */
 
 const fs   = require("fs");
@@ -17,7 +17,7 @@ const path = require("path");
 const yaml = require("js-yaml");
 
 const OUT_FILE      = path.join(__dirname, "oe-runtime.postman_collection.json");
-const SAMPLES_DIR   = path.join(__dirname, "samples");
+const SAMPLES_DIR   = path.join(__dirname, "skills");
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -191,8 +191,8 @@ function buildSampleRequest(sampleDir) {
 
 function buildSamplesFolder() {
   if (!fs.existsSync(SAMPLES_DIR)) {
-    console.warn("  ⚠  samples/ directory not found — skipping");
-    return { name: "Samples", description: "Sample agents", item: [] };
+    console.warn("  ⚠  skills/ directory not found — skipping");
+    return { name: "Skills", description: "Sample agents", item: [] };
   }
 
   const entries = fs.readdirSync(SAMPLES_DIR, { withFileTypes: true })
@@ -221,7 +221,7 @@ function buildSamplesFolder() {
   }
 
   return {
-    name:        "Samples",
+    name:        "Skills",
     description: "One request per sample agent — each sends the full agent YAML to POST /run.",
     item:        items,
   };
@@ -230,7 +230,7 @@ function buildSamplesFolder() {
 // ── assemble & write ──────────────────────────────────────────────────────────
 
 function generate() {
-  console.log("Generating Postman collection from samples/…\n");
+  console.log("Generating Postman collection from skills/…\n");
 
   const samplesFolder = buildSamplesFolder();
 

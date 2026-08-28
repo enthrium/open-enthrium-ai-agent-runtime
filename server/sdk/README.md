@@ -134,6 +134,6 @@ See [OE Runtime Connector Catalog](https://www.openenthrium.com/runtime.html) fo
 ## Links
 
 - [OE Runtime CLI](https://www.openenthrium.com/runtime.html)
-- [Sample library](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip)
+- [Skills library](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-skills.zip)
 - [GitHub](https://github.com/enthrium/open-enthrium-ai-agent-runtime)
 - [Open Enthrium](https://www.openenthrium.com)

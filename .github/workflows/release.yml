@@ -85,8 +85,8 @@ jobs:
         working-directory: server
         run: node cli/generate-postman.js
 
-      - name: Zip sample library
-        run: cd server/cli && zip -r oe-runtime-samples.zip samples/
+      - name: Zip skills library
+        run: cd server/cli && zip -r oe-runtime-skills.zip skills/
 
       - name: Upload Linux binaries and starter files
         uses: softprops/action-gh-release@v2
@@ -95,7 +95,7 @@ jobs:
           files: |
             server/cli/oe-runtime-linux
             server/cli/oe-runtime.postman_collection.json
-            server/cli/oe-runtime-samples.zip
+            server/cli/oe-runtime-skills.zip
 
   build-macos:
     needs: [create-release]

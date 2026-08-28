@@ -30,7 +30,7 @@ Open Enthrium AI Agent Runtime (OE Runtime) is a standalone, cross-platform bina
 
 ## Sample Library
 
-Download [oe-runtime-samples.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-samples.zip) for 24 ready-to-run starter kits — each with a complete `agent.yaml` + `oe-config.json`:
+Download [oe-runtime-skills.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-skills.zip) for 24 ready-to-run starter kits — each with a complete `agent.yaml` + `oe-config.json`:
 
 **Getting started** — `hello-world` · `chains` · `my-ai-project`
 

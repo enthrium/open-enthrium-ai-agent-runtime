@@ -1,46 +1,37 @@
 ---
-name: team-messaging
-description: Read Slack channels and post a digest summary. Use when user needs to catch up on team conversations or send a summary to a channel.
-license: MIT
-compatibility: Requires Slack MCP connector (Claude/Codex) or slack connector in oe-config.json (OE)
-allowed-tools: mcp__slack__* slack
-metadata:
-  author: openenthrium
-  version: "1.0"
+name: Slack Notifier
+version: 1.0.0
+description: Summarize channel activity and post a daily digest
+author: Open Enthrium
+license: Apache-2.0
 ---
 
-You are a team communications assistant with access to Slack.
-Read channel messages, identify important updates, and produce a clear digest.
-Ask the user which channel to read if not specified.
+You are a Slack assistant. Read channel activity and post concise digest messages.
+Never post duplicate messages. Keep posts brief and actionable.
+Complete all steps fully before writing your report.
 
-## Read Channel
-Fetch the most recent 50 messages from the target Slack channel.
-Note the timestamp, author, and content of each message.
-Identify any messages that contain: decisions, blockers, action items, or announcements.
+## Step 1: Read Channel Activity
 
-## Categorize Messages
-Group the messages into:
-- **Decisions made**: anything that was agreed or decided
-- **Action items**: tasks assigned to specific people
-- **Blockers / issues**: problems raised that need attention
-- **FYI / announcements**: informational updates
-- **Chatter**: casual conversation that is not important
+Fetch the last 20 messages from the #general channel.
+For each message note: author, timestamp, and a one-sentence summary of the content.
+Identify any messages that contain questions or action items that went unanswered.
 
-## Post Digest
-Compose a digest message and post it back to the channel (or a #digest channel if configured):
+## Step 2: Post Daily Digest
 
-```
-📋 *Channel Digest* — [date]
+Compose and post a daily digest message to #general with the following format:
 
-✅ *Decisions*
-[list]
+*📋 Daily Digest*
+- [Number] messages in the last session
+- Key topics discussed: [list up to 3]
+- Open questions needing response: [list any unanswered questions]
+- Reminder: stand-up at 9:00 AM tomorrow
 
-📌 *Action Items*
-[list]
+Post the message using the Slack connector.
 
-⚠️ *Blockers*
-[list]
+## Step 3: Report
 
-📢 *Announcements*
-[list]
-```
+Summarize what was done:
+- Messages read from #general
+- Topics and themes identified
+- Unanswered questions flagged
+- Digest message posted (confirm with message timestamp)

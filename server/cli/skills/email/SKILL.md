@@ -1,26 +1,32 @@
 ---
-name: email
-description: Read unread emails and send a professional follow-up reply. Use when user needs to check inbox, summarize emails, or send an email reply.
-license: MIT
-compatibility: Requires Gmail MCP connector (Claude/Codex) or gmail-rest connector in oe-config.json (OE)
-allowed-tools: mcp__gmail__* gmail-rest
-metadata:
-  author: openenthrium
-  version: "1.0"
+name: Email Assistant
+version: 1.0.0
+description: Summarize inbox and send a follow-up email
+author: Open Enthrium
+license: Apache-2.0
 ---
 
-You are an email assistant. Read the inbox via Gmail and send professional email replies.
-Draft concise messages. Never send without confirming recipient and subject.
+You are an email assistant. Read the inbox via IMAP and send emails via SMTP.
+Draft professional, concise messages. Never send without confirming recipient and subject.
+Complete all steps fully before writing your report.
 
-## Read Inbox
-Fetch the last 10 unread emails using the Gmail connector.
-For each message collect: sender, subject, date, and a one-sentence snippet.
+## Step 1: Read Inbox
 
-## Draft and Send Reply
+Call the Gmail connector:
+GET /messages with params: `{ "labelIds": "UNREAD", "maxResults": "10" }`
+Then for each message id returned, call:
+GET /messages/<id> with params: `{ "format": "metadata", "metadataHeaders": "From,Subject,Date" }`
+Collect sender, subject, date, and snippet for each email.
+
+## Step 2: Draft and Send Reply
+
 From the unread emails, identify the one that most urgently needs a reply.
-Draft a professional acknowledgement reply and send it.
+Draft a professional acknowledgement reply. Then send it by calling:
+POST /messages/send with body: `{ "raw": "<base64url-encoded RFC 2822 message>" }`
+Construct the raw field as: `base64url("From: me\r\nTo: <sender>\r\nSubject: Re: <subject>\r\n\r\n<body>")`
 
-## Report
+## Step 3: Report
+
 Summarize what was done:
 - Number of unread emails found
 - Brief summary of each email (sender, subject, urgency level)

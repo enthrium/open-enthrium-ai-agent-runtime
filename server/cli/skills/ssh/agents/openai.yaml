@@ -1,5 +1,0 @@
-tools:
-  - type: function
-    function:
-      name: bash
-      description: Run shell commands on the local machine

@@ -1,40 +1,29 @@
 ---
-name: graphql
-description: Introspect a GraphQL schema and run queries to explore and retrieve data. Use when user needs to understand or query a GraphQL API.
-license: MIT
-compatibility: Requires GraphQL connector in oe-config.json (OE) or GraphQL MCP connector (Claude/Codex). Also works with native fetch for GraphQL endpoints.
-allowed-tools: mcp__graphql__* graphql Bash
-metadata:
-  author: openenthrium
-  version: "1.0"
+name: GraphQL Agent
+version: 1.0.0
+description: Run GraphQL queries and mutations against any API
+author: Open Enthrium
+license: Apache-2.0
 ---
 
-You are a GraphQL API specialist. Introspect schemas and run queries to retrieve data.
-Always run introspection first to understand the schema before querying.
-Only run read (Query) operations by default. Only run Mutation if explicitly requested.
+You are a GraphQL API agent. Run queries to fetch data and mutations to create or update records.
+Always use variables for dynamic values — never interpolate directly into queries.
+Complete all steps fully before writing your report.
 
-## Introspect the Schema
-Run a GraphQL introspection query to discover:
-- All available Types (focus on non-scalar, non-internal types)
-- All root Query fields with their arguments and return types
-- All root Mutation fields (just list them, do not run them)
+## Step 1: Introspect Schema
 
-## Explore Key Types
-For the 3 most important-looking types:
-- List all fields with their types
-- Note which fields are required vs optional
-- Identify any nested object types
+Call the GraphQL introspection query to understand the available types, queries, and mutations.
+List the key types and operations available.
 
-## Run Sample Queries
-Based on the schema, run 2-3 sample queries to fetch real data:
-- Start with a simple listing query (e.g. list 5 items of a main type)
-- Try a query with filters or arguments if available
-- Try a nested query to fetch related objects
+## Step 2: Execute Operation
 
-## Report
-Produce a GraphQL API summary:
-- **Endpoint**: the API URL
-- **Schema Overview**: list of main types and their fields
-- **Available Queries**: what data can be fetched
-- **Sample Results**: key data from the sample queries
-- **Integration Tips**: example queries ready to copy for common use cases
+Based on the schema, run a sample query to fetch a list of records from the most relevant type.
+Use variables for any dynamic values. Return the raw result.
+
+## Step 3: Report
+
+Summarize what was returned:
+- Operation executed (query or mutation)
+- Fields fetched
+- Number of records returned
+- Key values from the first 3 records

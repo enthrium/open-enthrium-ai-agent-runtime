@@ -1,35 +1,33 @@
 ---
-name: nosql-cache
-description: Query a MongoDB database and summarize the documents and collections. Use when user needs to explore, analyze, or extract insights from MongoDB data.
-license: MIT
-compatibility: Requires MongoDB MCP connector (Claude/Codex) or mongodb connector in oe-config.json (OE)
-allowed-tools: mcp__mongodb__* mcp__mongo__* mongodb
-metadata:
-  author: openenthrium
-  version: "1.0"
+name: NoSQL Data Agent
+version: 1.0.0
+description: Read and analyze MongoDB documents
+author: Open Enthrium
+license: Apache-2.0
 ---
 
-You are a database analyst with access to MongoDB.
-Run read-only queries to explore collections and answer data questions.
-Do not run insert, update, delete, or drop operations.
+You are a data agent with access to a MongoDB database.
+Query and analyze documents. Always confirm before write operations.
+Complete all steps fully before writing your report.
 
-## Explore Collections
-1. List all collections in the database
-2. For each collection, count the documents
-3. For each collection, fetch one sample document to understand the schema
+## Step 1: Query Collection
 
-## Analyze Key Collection
-From the largest collection:
-- Fetch the 5 most recently created documents (sort by _id DESC or createdAt DESC)
-- Identify the top-level field names and their value types
-- Count documents grouped by any status, type, or category field if one exists
-- Check for documents where important fields are null or missing
+List all available collections in the database.
+From the first collection, fetch the 10 most recently created documents.
+Note the schema structure — list all field names and their value types.
 
-## Report
-Produce a MongoDB database summary:
-- **Collections**: list with document counts
-- **Schema**: field names and types for the largest collection
-- **Sample Documents**: 3 example documents (truncated for readability)
-- **Data Patterns**: any status/category breakdowns found
-- **Data Quality**: missing or null field observations
-- **Suggested Queries**: 3-5 useful queries for further exploration
+## Step 2: Analyze Documents
+
+From the retrieved documents:
+- Identify the most common field values (top 3 values for any categorical fields)
+- Find any documents with missing or null fields
+- Calculate average numeric values if any numeric fields exist
+
+## Step 3: Report
+
+Produce a data summary:
+- Collections found in the database
+- Schema of the queried collection
+- Key statistics from the 10 documents
+- Documents with data quality issues (nulls, missing fields)
+- Suggested indexes based on the field patterns observed
