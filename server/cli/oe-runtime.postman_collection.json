@@ -55,7 +55,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"yaml\": \"name: Hello World\\nsteps:\\n  - name: Say hello\\n    content: Say hello world\",\n  \"params\": {},\n  \"input\": null\n}",
+          "raw": "{\n  \"yaml\": \"name: Hello World\\nsteps:\\n  - name: Say hello\\n    content: Say hello world\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -90,7 +90,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"file\": \"/path/to/your/agent.yaml\",\n  \"params\": {},\n  \"input\": null\n}",
+          "raw": "{\n  \"file\": \"/path/to/your/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -164,7 +164,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Blockchain Agent\\ndescription: Check ETH wallet balance\\ninstructions: |\\n  You are a blockchain data agent. Use the tools to fetch data and respond concisely.\\nsteps:\\n  - name: Check Balance\\n    content: |\\n      Get the ETH balance for the configured wallet address. Report the address and balance in ETH. Nothing else.\\nconnectors:\\n  - connection_name: Ethereum\\n    connection_type: web3\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/blockchain-web3/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -172,15 +172,15 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Check ETH wallet balance\nConnectors: Ethereum (web3)"
+            "description": "Query blockchain data — balances, transactions, and smart contracts\nConnectors: Ethereum (web3)\nPowered by SKILL.md\n\nSteps:\n  • Network Info\n  • Address Lookup\n  • Recent Transactions\n  • Report"
           }
         },
         {
@@ -199,7 +199,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Blog to Video Agent\\ndescription: Converts a blog post into a teaching video — fetches content, plans slides, generates images and narration, creates a Canva presentation, and exports an MP4.\\n\\ninstructions: |\\n  You are a teaching video producer. Follow each step exactly and pass outputs\\n  from one step into the next. Do not skip steps or combine them.\\n\\nparams:\\n  - name: blog_url\\n    description: Full URL of the blog post to convert into a video\\n    default: https://www.openenthrium.com/blog/ai-telegram-bot-agent.html\\n\\nllm:\\n  provider: openai\\n  model: gpt-4o\\n\\nconnectors:\\n  - connection_name: Blog\\n    connection_type: restApi\\n  - connection_name: OpenAI\\n    connection_type: restApi\\n  - connection_name: Canva\\n    connection_type: restApi\\n\\nsteps:\\n  - name: Fetch Blog Content\\n    use: Blog\\n    content: |\\n      GET {{blog_url}}\\n      Extract all heading and paragraph text. Return the full article text only — no HTML tags.\\n\\n  - name: Plan Slides\\n    content: |\\n      You are a teaching video scriptwriter. Convert the blog content into exactly 6 slides.\\n      Output a JSON array — one object per slide with these exact keys:\\n      {\\n        \\\"slide_number\\\": 1,\\n        \\\"title\\\": \\\"short slide title (max 8 words)\\\",\\n        \\\"bullets\\\": [\\\"point 1\\\", \\\"point 2\\\", \\\"point 3\\\"],\\n        \\\"narration\\\": \\\"20-30 words spoken aloud for this slide — conversational and clear\\\",\\n        \\\"image_prompt\\\": \\\"detailed DALL-E 3 prompt for a professional, relevant background image\\\"\\n      }\\n      Slide 1 = title and intro. Slides 2-5 = one key concept each. Slide 6 = summary and next steps.\\n      Output only the JSON array, nothing else.\\n\\n  - name: Generate Slide Images\\n    use: OpenAI\\n    content: |\\n      For each of the 6 slides, POST /images/generations with:\\n        model: dall-e-3\\n        prompt: the slide's image_prompt\\n        size: 1792x1024\\n        quality: standard\\n        n: 1\\n      Collect all 6 image URLs in slide order. Return them as a numbered list.\\n\\n  - name: Generate Narration Audio\\n    use: OpenAI\\n    content: |\\n      Join all 6 slide narrations in order into one script, separated by \\\" ... \\\" between slides.\\n      POST /audio/speech with:\\n        model: tts-1\\n        voice: nova\\n        input: the combined narration script\\n      Return the audio file path where it was saved.\\n\\n  - name: Create Canva Presentation\\n    use: Canva\\n    content: |\\n      POST /designs with body:\\n        { \\\"design_type\\\": { \\\"type\\\": \\\"preset\\\", \\\"name\\\": \\\"Presentation\\\" } }\\n      Save the returned design ID. This is the blank presentation to fill with slides.\\n\\n  - name: Upload Images to Canva\\n    use: Canva\\n    content: |\\n      For each of the 6 slide image URLs from step 3, POST /assets with the image URL.\\n      Use name \\\"slide-1.png\\\" through \\\"slide-6.png\\\".\\n      Collect and return all 6 Canva asset IDs in order.\\n\\n  - name: Upload Audio to Canva\\n    use: Canva\\n    content: |\\n      POST /assets to upload the narration audio file saved in step 4.\\n      Use name \\\"narration.mp3\\\". Return the Canva audio asset ID.\\n\\n  - name: Add Slides to Design\\n    use: Canva\\n    content: |\\n      For each of the 6 slides, POST /designs/{designId}/pages:\\n        - Set the slide image asset as the page background\\n        - Add a text element for the slide title\\n        - Add a text element for the bullet points\\n      Add the narration audio as the design audio track.\\n\\n  - name: Export Video\\n    use: Canva\\n    content: |\\n      POST /exports with the design ID and body: { \\\"format\\\": { \\\"type\\\": \\\"mp4\\\" } }\\n      Poll GET /exports/{exportId} every 10 seconds until status is \\\"success\\\".\\n      Return the final MP4 download URL.\\n\\n  - name: Report\\n    content: |\\n      The teaching video is ready. Provide:\\n      - The Canva MP4 download URL\\n      - A summary of each slide title\\n      - Total number of slides and estimated video length\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/blog-to-video/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -207,15 +207,470 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Converts a blog post into a teaching video — fetches content, plans slides, generates images and narration, creates a Canva presentation, and exports an MP4.\nConnectors: Blog (restApi), OpenAI (restApi), Canva (restApi)"
+            "description": "Converts a blog post into a teaching video — fetches content, plans slides, generates images and narration, and exports an MP4\nConnectors: Blog (restApi), OpenAI (restApi), Canva (restApi)\nPowered by SKILL.md\n\nSteps:\n  • Fetch Blog Content\n  • Generate Video Script\n  • Generate Voiceover\n  • Create Slide Visuals\n  • Export Slides\n  • Assemble Video\n  • Report"
+          }
+        },
+        {
+          "name": "Drive Manager",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/cloud-drives/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Read, write, and organize files in Google Drive\nConnectors: My Google Drive (google-drive)\nPowered by SKILL.md\n\nSteps:\n  • List Files\n  • Identify Unorganized Files\n  • Report"
+          }
+        },
+        {
+          "name": "Directory Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/directory-identity/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Search and manage users in LDAP or Active Directory\nConnectors: Active Directory (ldap)\nPowered by SKILL.md\n\nSteps:\n  • List Users\n  • List Groups\n  • Org Structure Report\n  • Report"
+          }
+        },
+        {
+          "name": "Email Assistant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/email/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Summarize inbox and send a follow-up email\nConnectors: My Email (gmail-rest)\nPowered by SKILL.md\n\nSteps:\n  • Read Inbox\n  • Draft and Send Reply\n  • Report"
+          }
+        },
+        {
+          "name": "File Storage Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/file-storage/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Upload, list, download, and manage files in S3-compatible storage\nConnectors: My S3 Bucket (s3)\nPowered by SKILL.md\n\nSteps:\n  • List Bucket Contents\n  • Analyze Storage\n  • Report"
+          }
+        },
+        {
+          "name": "GraphQL Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/graphql/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Run GraphQL queries and mutations\nConnectors: My GraphQL API (graphql)\nPowered by SKILL.md\n\nSteps:\n  • Introspect Schema\n  • Execute Operation\n  • Report"
+          }
+        },
+        {
+          "name": "Hello World",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/hello-world/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "The simplest possible OE Runtime agent — no connectors, no params, just an LLM response\nPowered by SKILL.md\n\nSteps:\n  • Greet"
+          }
+        },
+        {
+          "name": "Image Creator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/image-generation/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Generate images from text descriptions using AI\nConnectors: OpenAI Image (openai-image)\nPowered by SKILL.md\n\nSteps:\n  • Plan the Prompt\n  • Generate Image\n  • Report"
+          }
+        },
+        {
+          "name": "IoT Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/iot-messaging/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Publish commands and read sensor data via MQTT\nConnectors: MQTT Broker (mqtt)\nPowered by SKILL.md\n\nSteps:\n  • Subscribe to Sensor Topics\n  • Analyze Readings\n  • Publish Commands\n  • Report"
+          }
+        },
+        {
+          "name": "Local Script Runner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/local-exec/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Run Python, Node.js, and shell commands directly on this machine\nConnectors: Local Shell (shell)\nPowered by SKILL.md\n\nSteps:\n  • System Inventory\n  • Run a Test Script\n  • Environment Check\n  • Report"
+          }
+        },
+        {
+          "name": "Queue Publisher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/message-queues/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Publish messages to Kafka topics and verify delivery\nConnectors: My Kafka (kafka)\nPowered by SKILL.md\n\nSteps:\n  • List Topics\n  • Publish Messages\n  • Consume Messages\n  • Report"
+          }
+        },
+        {
+          "name": "Music Creator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/music-generation/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Generate original music tracks from text descriptions\nConnectors: Suno (suno)\nPowered by SKILL.md\n\nSteps:\n  • Design Music Prompt\n  • Generate Track\n  • Report"
+          }
+        },
+        {
+          "name": "NoSQL Data Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/nosql-cache/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Read and write MongoDB documents\nConnectors: My MongoDB (mongodb)\nPowered by SKILL.md\n\nSteps:\n  • Query Collection\n  • Analyze Documents\n  • Report"
+          }
+        },
+        {
+          "name": "Document Reader",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/ocr-vision/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Extract and analyze text from images using OCR\nConnectors: Azure Vision (azure-vision)\nPowered by SKILL.md\n\nSteps:\n  • Analyze a Document Image\n  • Poll for Results\n  • Structure the Data\n  • Report"
           }
         },
         {
@@ -234,7 +689,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Chain Starter\\ndescription: Primary agent that chains to a follow-up (auto) and a review step (manual approval)\\ninstructions: You are a helpful assistant. Complete your task clearly and concisely.\\nsteps:\\n  - name: Main Task\\n    content: |\\n      Write a short 3-sentence summary about the benefits of AI agents in enterprise workflows.\\n\\nchains:\\n  - next_agent: ./chain-followup.yaml\\n    trigger_type: auto\\n\\n  - next_agent: ./chain-manual.yaml\\n    trigger_type: manual\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"yaml\": \"name: Chain Starter\\ndescription: Primary agent that chains to a follow-up (auto) and a review step (manual approval)\\ninstructions: You are a helpful assistant. Complete your task clearly and concisely.\\nsteps:\\n  - name: Main Task\\n    content: |\\n      Write a short 3-sentence summary about the benefits of AI agents in enterprise workflows.\\n\\nchains:\\n  - next_agent: ./chain-followup.yaml\\n    trigger_type: auto\\n\\n  - next_agent: ./chain-manual.yaml\\n    trigger_type: manual\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -254,424 +709,226 @@
           }
         },
         {
-          "name": "Drive Manager",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Drive Manager\\ndescription: Read, write, and organize files in Google Drive\\ninstructions: |\\n  You are a file organization agent with access to Google Drive.\\n  Help find, list, organize, and summarize files and folders.\\n  Always confirm before making any write or delete operations.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: List Files\\n    content: |\\n      Call the Google Drive connector:\\n      GET /files with params:\\n      {\\n        \\\"orderBy\\\": \\\"modifiedTime desc\\\",\\n        \\\"pageSize\\\": \\\"20\\\",\\n        \\\"fields\\\": \\\"files(id,name,mimeType,size,modifiedTime,parents)\\\"\\n      }\\n      Note each file's name, type, size, and last modified date.\\n\\n  - name: Identify Unorganized Files\\n    content: |\\n      From the listed files, identify any files sitting loose in the root that could be moved into folders.\\n      Group them by type (documents, spreadsheets, images, PDFs, other).\\n\\n  - name: Report\\n    content: |\\n      Produce a Drive summary:\\n      - Total files and folders found\\n      - Breakdown by file type\\n      - List of files that are unorganized in root\\n      - Recommended folder structure to organize them\\nconnectors:\\n  - connection_name: My Google Drive\\n    connection_type: google-drive\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+          "name": "My AI Project",
+          "description": "A multi-agent project accessible from Telegram, Slack, HTTP, and MCP",
+          "item": [
+            {
+              "name": "hello",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"yaml\": \"name: Hello World\\ndescription: Greet the user and share a fun fact about today in history\\ninstructions: You are a helpful assistant.\\nsteps:\\n  - name: Greet\\n    content: |\\n      Say hello, mention today's date, and share one fun fact about today in history.\\n      Keep it brief and friendly.\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/run",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "run"
+                  ]
+                },
+                "description": "Greet and share a fun fact"
               }
             },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
+            {
+              "name": "summary",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"yaml\": \"name: summary\\ndescription: Summarise AI Trends in 2026 in 3 clear bullet points\\ninstructions: You are a concise summariser. Always respond with exactly 3 bullet points.\\nsteps:\\n  - name: Summarise\\n    content: |\\n      Summarise AI Trends in 2026 in exactly 3 bullet points.\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/run",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "run"
+                  ]
+                },
+                "description": "Summarise AI Trends in 2026 in 3 bullet points"
+              }
             },
-            "description": "Read, write, and organize files in Google Drive\nConnectors: My Google Drive (google-drive)"
-          }
+            {
+              "name": "chain-demo",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"yaml\": \"name: Chain Demo\\ndescription: Demonstrates auto chains (fire immediately) and manual chains (require approval)\\ninstructions: You are a helpful assistant.\\nsteps:\\n  - name: Main Task\\n    content: |\\n      Write a 2-sentence overview of how AI agents are changing enterprise software.\\n\\nchains:\\n  - next_agent: ./chain-followup.yaml\\n    trigger_type: auto\\n\\n  - next_agent: ./chain-manual.yaml\\n    trigger_type: manual\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/run",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "run"
+                  ]
+                },
+                "description": "Demo agent with auto and manual chains"
+              }
+            },
+            {
+              "name": "chat (default)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"yaml\": \"name: Chat Bot\\ndescription: Default conversational agent — handles any plain message from Telegram, Slack, or HTTP\\ninstructions: |\\n  You are a helpful, concise AI assistant.\\n  Respond directly to the user's message. Keep replies under 300 words.\\n  Do not use heavy markdown formatting — plain text works best in chat.\\nparams:\\n  - name: message\\n    description: The incoming message from the user\\n  - name: user\\n    description: The user's name or username\\nsteps:\\n  - name: Reply\\n    content: |\\n      {{user}} says: {{message}}\\n\\n      Write a helpful, friendly reply.\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/run",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "run"
+                  ]
+                },
+                "description": "Conversational assistant — default for all messages"
+              }
+            }
+          ]
         },
         {
-          "name": "Directory Agent",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Directory Agent\\ndescription: Search and manage users in LDAP or Active Directory\\ninstructions: |\\n  You are a directory services agent. Search for users, list groups,\\n  retrieve account details, and manage entries in LDAP or Active Directory.\\n  Always confirm before making any changes.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Search Users\\n    content: |\\n      Search Active Directory for all user accounts created or modified in the last 30 days.\\n      Retrieve: display name, email, department, account status (enabled/disabled), and last login date.\\n  - name: Check Account Health\\n    content: |\\n      From the retrieved accounts:\\n      - Identify any accounts that are disabled but still have group memberships\\n      - Identify accounts with no login in the last 30 days\\n      - Flag accounts with missing email or department fields\\n  - name: Report\\n    content: |\\n      Produce a directory health summary:\\n      - Total accounts found\\n      - Number of enabled vs disabled accounts\\n      - Accounts flagged for review (disabled with memberships, stale logins, incomplete profiles)\\n      - Recommended actions for each flagged account\\nconnectors:\\n  - connection_name: Active Directory\\n    connection_type: ldap\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Search and manage users in LDAP or Active Directory\nConnectors: Active Directory (ldap)"
-          }
-        },
-        {
-          "name": "Email Assistant",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Email Assistant\\ndescription: Summarize inbox and send a follow-up email\\ninstructions: |\\n  You are an email assistant. Read the inbox via IMAP and send emails via SMTP.\\n  Draft professional, concise messages. Never send without confirming recipient and subject.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Read Inbox\\n    content: |\\n      Call the Gmail connector:\\n      GET /messages with params: { \\\"labelIds\\\": \\\"UNREAD\\\", \\\"maxResults\\\": \\\"10\\\" }\\n      Then for each message id returned, call:\\n      GET /messages/<id> with params: { \\\"format\\\": \\\"metadata\\\", \\\"metadataHeaders\\\": \\\"From,Subject,Date\\\" }\\n      Collect sender, subject, date, and snippet for each email.\\n\\n  - name: Draft and Send Reply\\n    content: |\\n      From the unread emails, identify the one that most urgently needs a reply.\\n      Draft a professional acknowledgement reply. Then send it by calling:\\n      POST /messages/send\\n      with body: { \\\"raw\\\": \\\"<base64url-encoded RFC 2822 message>\\\" }\\n      Construct the raw field as: base64url(\\\"From: me\\\\r\\\\nTo: <sender>\\\\r\\\\nSubject: Re: <subject>\\\\r\\\\n\\\\r\\\\n<body>\\\")\\n\\n  - name: Report\\n    content: |\\n      Summarize what was done:\\n      - Number of unread emails found\\n      - Brief summary of each email (sender, subject, urgency level)\\n      - Which email was replied to and why\\n      - Confirm the reply was sent successfully\\nconnectors:\\n  - connection_name: My Email\\n    connection_type: gmail-rest\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+          "name": "Telegram Bot",
+          "description": "Conversational AI bot accessible from Telegram",
+          "item": [
+            {
+              "name": "chat (default)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"yaml\": \"name: Telegram Webhook Bot\\ndescription: Conversational AI bot that responds to Telegram messages via webhook\\ninstructions: |\\n  You are a helpful AI assistant responding to messages in a Telegram chat.\\n  Be concise, friendly, and clear. Keep replies under 500 words.\\n  Do not use triple backticks — they don't render well in Telegram.\\nparams:\\n  - name: message\\n    description: The incoming message text from the user\\n  - name: user\\n    description: The user's first name or username\\nsteps:\\n  - name: Reply\\n    content: |\\n      {{user}} says: {{message}}\\n\\n      Write a helpful, friendly reply. Be direct — no preamble.\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/run",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "run"
+                  ]
+                },
+                "description": "Conversational assistant — default for all messages"
               }
             },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Summarize inbox and send a follow-up email\nConnectors: My Email (gmail-rest)"
-          }
-        },
-        {
-          "name": "File Storage Agent",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
+            {
+              "name": "notifier",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{api_key}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"yaml\": \"name: Telegram Notifier\\ndescription: Read recent Telegram messages and send a summary notification\\ninstructions: |\\n  You are a Telegram bot agent. Read recent updates from the bot and send notification messages.\\n  Always confirm the bot is connected before reading messages.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Verify Bot Connection\\n    content: |\\n      Call the Telegram connector:\\n      GET /getMe\\n      Note the bot username, id, and display name to confirm the connection is working.\\n\\n  - name: Read Recent Updates\\n    content: |\\n      Call the Telegram connector:\\n      GET /getUpdates with params: { \\\"limit\\\": \\\"10\\\", \\\"allowed_updates\\\": \\\"message\\\" }\\n      For each message note: chat_id, from username, message text, and date.\\n      Remember the chat_id from the most recent message — you will use it to send the reply.\\n      If no updates are found, note that the bot has no recent messages and skip the next step.\\n\\n  - name: Send Summary Notification\\n    content: |\\n      Compose a brief summary of the recent messages.\\n      Use the chat_id from the most recent update (from Step 2).\\n      Send it via the Telegram connector:\\n      POST /sendMessage with body:\\n      {\\n        \\\"chat_id\\\": <chat_id from Step 2>,\\n        \\\"text\\\": \\\"<your summary message>\\\",\\n        \\\"parse_mode\\\": \\\"Markdown\\\"\\n      }\\n\\n  - name: Report\\n    content: |\\n      Summarize what was done:\\n      - Bot name and username confirmed\\n      - Number of recent messages read\\n      - Summary of message content\\n      - Notification sent to chat_id (confirm with message_id returned)\\nconnectors:\\n  - connection_name: My Telegram Bot\\n    connection_type: telegram\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/run",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "run"
+                  ]
+                },
+                "description": "Read recent Telegram messages and send a summary notification"
               }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: File Storage Agent\\ndescription: Upload, list, download, and manage files in S3-compatible storage\\ninstructions: |\\n  You are a file management agent with access to S3-compatible storage.\\n  List, inspect, and report on stored files. Confirm before any delete operations.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: List Bucket Contents\\n    content: |\\n      List all files in the configured S3 bucket.\\n      For each file note: key (path), size in KB/MB, last modified date, and storage class.\\n  - name: Analyze Storage\\n    content: |\\n      From the listed files:\\n      - Calculate total storage used\\n      - Identify the 5 largest files\\n      - Group files by extension type (images, documents, archives, other)\\n      - Flag any files older than 90 days that may be candidates for archiving\\n  - name: Report\\n    content: |\\n      Produce a storage summary:\\n      - Total files and total size\\n      - Breakdown by file type\\n      - Top 5 largest files\\n      - Files flagged for archiving\\n      - Recommended cleanup or archiving actions\\nconnectors:\\n  - connection_name: My S3 Bucket\\n    connection_type: s3\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Upload, list, download, and manage files in S3-compatible storage\nConnectors: My S3 Bucket (s3)"
-          }
-        },
-        {
-          "name": "GraphQL Agent",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: GraphQL Agent\\ndescription: Run GraphQL queries and mutations\\ninstructions: |\\n  You are a GraphQL API agent. Run queries to fetch data and mutations to create or update records.\\n  Always use variables for dynamic values — never interpolate directly into queries.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Introspect Schema\\n    content: |\\n      Call the GraphQL introspection query to understand the available types, queries, and mutations.\\n      List the key types and operations available.\\n  - name: Execute Operation\\n    content: |\\n      Based on the schema, run a sample query to fetch a list of records from the most relevant type.\\n      Use variables for any dynamic values. Return the raw result.\\n  - name: Report\\n    content: |\\n      Summarize what was returned:\\n      - Operation executed (query or mutation)\\n      - Fields fetched\\n      - Number of records returned\\n      - Key values from the first 3 records\\nconnectors:\\n  - connection_name: My GraphQL API\\n    connection_type: graphql\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Run GraphQL queries and mutations\nConnectors: My GraphQL API (graphql)"
-          }
-        },
-        {
-          "name": "Hello World",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Hello World\\ndescription: The simplest possible OE Runtime agent — no connectors, no params, just an LLM response\\ninstructions: You are a helpful assistant. Answer clearly and concisely.\\nsteps:\\n  - name: Greet\\n    content: |\\n      Say hello, introduce yourself as an OE Runtime agent,\\n      mention today's date, and share one interesting fact about today in history.\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "The simplest possible OE Runtime agent — no connectors, no params, just an LLM response"
-          }
-        },
-        {
-          "name": "Image Creator",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Image Creator\\ndescription: Generate images from text descriptions using AI\\ninstructions: |\\n  You are a creative image generation agent. Craft detailed prompts and generate high-quality images.\\n  If the concept is vague, enhance it with artistic style, lighting, and composition details before generating.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Plan the Prompt\\n    content: |\\n      Design a detailed image generation prompt for a professional product showcase photo.\\n      The subject: a sleek laptop on a minimalist desk with soft natural lighting.\\n      Enhance with: camera angle, lighting style, color palette, mood, and aspect ratio (16:9).\\n\\n  - name: Generate Image\\n    content: |\\n      Submit the prompt to the OpenAI Image connector.\\n      POST /images/generations with body:\\n      {\\n        \\\"model\\\": \\\"gpt-image-1\\\",\\n        \\\"prompt\\\": \\\"<detailed prompt from previous step>\\\",\\n        \\\"n\\\": 1,\\n        \\\"size\\\": \\\"1024x1024\\\"\\n      }\\n      The response will contain data[0].local_path with the saved image file path. Report that path.\\n\\n  - name: Report\\n    content: |\\n      Summarize the result:\\n      - The final prompt used\\n      - Any enhancements made to the original concept\\n      - Image URL\\n      - Style and composition notes for future reference\\nconnectors:\\n  - connection_name: OpenAI Image\\n    connection_type: openai-image\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Generate images from text descriptions using AI\nConnectors: OpenAI Image (openai-image)"
-          }
-        },
-        {
-          "name": "IoT Agent",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: IoT Agent\\ndescription: Publish commands and read sensor data via MQTT\\ninstructions: |\\n  You are an IoT agent. Subscribe to sensor data feeds and publish commands to devices via MQTT.\\n  Format all messages as JSON. Always read current state before publishing any commands.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Read Sensor Data\\n    content: |\\n      Subscribe to the sensor data topic and read the latest 5 messages.\\n      Extract: device ID, sensor type, value, unit, and timestamp for each message.\\n  - name: Evaluate and Publish Command\\n    content: |\\n      Analyze the sensor readings:\\n      - If any temperature reading exceeds 30°C, publish a cooling command to the control topic\\n      - If any humidity reading exceeds 80%, publish a ventilation command\\n      - Otherwise publish a status check ping to the control topic\\n      All commands must be JSON with fields: action, device_id, timestamp, triggered_by.\\n  - name: Report\\n    content: |\\n      Summarize IoT activity:\\n      - Sensor readings received (device, value, unit)\\n      - Any threshold breaches detected\\n      - Commands published (topic, payload)\\n      - Current system status (normal / alert)\\nconnectors:\\n  - connection_name: MQTT Broker\\n    connection_type: mqtt\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Publish commands and read sensor data via MQTT\nConnectors: MQTT Broker (mqtt)"
-          }
-        },
-        {
-          "name": "Queue Publisher",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Queue Publisher\\ndescription: Publish messages to Kafka topics and verify delivery\\ninstructions: |\\n  You are a message queue agent. Publish events to Kafka topics and confirm delivery.\\n  Format all payloads as JSON. Include event_type, timestamp, and payload in every message.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Check Topic Status\\n    content: |\\n      List the available Kafka topics and their partition counts.\\n      Check the consumer group lag for the main topic to see if messages are being consumed.\\n  - name: Publish Test Events\\n    content: |\\n      Publish 3 test events to the main topic with the following structure:\\n        { \\\"event_type\\\": \\\"system.health_check\\\", \\\"timestamp\\\": \\\"<current ISO timestamp>\\\", \\\"payload\\\": { \\\"status\\\": \\\"ok\\\", \\\"sequence\\\": <1, 2, 3> } }\\n      Publish them one at a time and confirm each delivery with the returned offset.\\n  - name: Report\\n    content: |\\n      Summarize queue activity:\\n      - Topics found and their partition counts\\n      - Consumer group lag before publishing\\n      - Events published (topic, offset, timestamp for each)\\n      - Delivery confirmation status\\nconnectors:\\n  - connection_name: My Kafka\\n    connection_type: kafka\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Publish messages to Kafka topics and verify delivery\nConnectors: My Kafka (kafka)"
-          }
-        },
-        {
-          "name": "Music Creator",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Music Creator\\ndescription: Generate original music tracks from text descriptions\\ninstructions: |\\n  You are a music generation agent. Create original music using the Suno connector via kie.ai.\\n  Music generation is asynchronous — after submitting, poll for completion before returning the result.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Design Music Prompt\\n    content: |\\n      Craft a detailed music prompt for an upbeat corporate background track.\\n      Specify: genre (corporate pop), mood (energetic, optimistic), tempo (120 BPM),\\n      instruments (acoustic guitar, light drums, piano), no vocals.\\n\\n  - name: Generate Track\\n    content: |\\n      Submit the music prompt to the Suno connector.\\n      POST /generate with body:\\n      {\\n        \\\"prompt\\\": \\\"<detailed music prompt from previous step>\\\",\\n        \\\"model\\\": \\\"V4_5\\\",\\n        \\\"instrumental\\\": true,\\n        \\\"customMode\\\": false\\n      }\\n      Save the taskId from the response: data.taskId.\\n      Then poll GET /generate/<taskId> every 10 seconds until data.status is \\\"complete\\\".\\n      Once complete, extract and save the audio URL from the response.\\n\\n  - name: Report\\n    content: |\\n      Summarize the result:\\n      - Prompt used for generation\\n      - Track title returned by Suno\\n      - Audio URL\\n      - Generation time taken\\nconnectors:\\n  - connection_name: Suno\\n    connection_type: suno\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Generate original music tracks from text descriptions\nConnectors: Suno (suno)"
-          }
-        },
-        {
-          "name": "NoSQL Data Agent",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: NoSQL Data Agent\\ndescription: Read and write MongoDB documents\\ninstructions: |\\n  You are a data agent with access to a MongoDB database.\\n  Query, insert, and analyze documents. Always confirm before write operations.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Query Collection\\n    content: |\\n      List all available collections in the database.\\n      From the first collection, fetch the 10 most recently created documents.\\n      Note the schema structure — list all field names and their value types.\\n  - name: Analyze Documents\\n    content: |\\n      From the retrieved documents:\\n      - Identify the most common field values (top 3 values for any categorical fields)\\n      - Find any documents with missing or null fields\\n      - Calculate average numeric values if any numeric fields exist\\n  - name: Report\\n    content: |\\n      Produce a data summary:\\n      - Collections found in the database\\n      - Schema of the queried collection\\n      - Key statistics from the 10 documents\\n      - Documents with data quality issues (nulls, missing fields)\\n      - Suggested indexes based on the field patterns observed\\nconnectors:\\n  - connection_name: My MongoDB\\n    connection_type: mongodb\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Read and write MongoDB documents\nConnectors: My MongoDB (mongodb)"
-          }
-        },
-        {
-          "name": "Document Reader",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Document Reader\\ndescription: Extract and analyze text from images using OCR\\ninstructions: |\\n  You are a document analysis agent. Extract text from images using the Azure Vision connector,\\n  then analyze, classify, and summarize the extracted content.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Extract Text\\n    content: |\\n      Call the Azure Vision connector to run OCR on the provided image.\\n      POST /read/analyze with body:\\n      {\\n        \\\"url\\\": \\\"<image URL to analyze>\\\"\\n      }\\n      Save the Operation-Location URL from the response headers.\\n      Then poll GET <operation-path> (the path portion of the Operation-Location URL)\\n      every 2 seconds until status is \\\"succeeded\\\".\\n      Extract all text lines from the analyzeResult.readResults.\\n\\n  - name: Classify and Structure\\n    content: |\\n      Analyze the extracted text to determine the document type\\n      (invoice, receipt, contract, ID, form, letter, or other).\\n      Extract key structured fields based on type — e.g. for an invoice: vendor, date, line items, total.\\n\\n  - name: Report\\n    content: |\\n      Produce a document analysis result:\\n      - Document type identified\\n      - Structured fields extracted with values\\n      - Full raw text extracted\\n      - Any low-confidence regions or unreadable sections\\n      - Suggested next action (e.g. file, process payment, follow up)\\nconnectors:\\n  - connection_name: Azure Vision\\n    connection_type: azure-vision\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Extract and analyze text from images using OCR\nConnectors: Azure Vision (azure-vision)"
-          }
+            }
+          ]
         },
         {
           "name": "GitHub Assistant",
@@ -689,7 +946,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: GitHub Assistant\\ndescription: Summarize open issues and PRs in a repository\\ninstructions: |\\n  You are a GitHub assistant. Fetch repository activity, summarize open issues and pull requests,\\n  and identify what needs immediate attention.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Fetch Repository Activity\\n    content: |\\n      Using the GitHub connector, fetch:\\n      - All open issues (up to 20), sorted by most recently updated\\n      - All open pull requests (up to 10), sorted by most recently updated\\n      For each, note: title, author, labels, created date, and days open.\\n  - name: Triage and Prioritize\\n    content: |\\n      From the fetched issues and PRs:\\n      - Flag any issue or PR open for more than 14 days as stale\\n      - Group issues by label (bug, enhancement, question, other)\\n      - Identify PRs that have no reviewers assigned\\n      - Find any issues marked as \\\"bug\\\" that have no assigned PR\\n  - name: Report\\n    content: |\\n      Produce a repository health summary:\\n      - Open issues: total, breakdown by label, stale count\\n      - Open PRs: total, unreviewed count, stale count\\n      - Top 3 most urgent issues (bugs with no PR)\\n      - Recommended next actions\\nconnectors:\\n  - connection_name: GitHub\\n    connection_type: github\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/productivity-crm/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -697,15 +954,15 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Summarize open issues and PRs in a repository\nConnectors: GitHub (github)"
+            "description": "Summarize open issues and PRs in a repository\nConnectors: GitHub (github)\nPowered by SKILL.md\n\nSteps:\n  • Repository Overview\n  • Issue Triage\n  • Create a Summary Issue\n  • Report"
           }
         },
         {
@@ -724,7 +981,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: API Caller\\ndescription: Make HTTP requests to a REST API and summarize responses\\ninstructions: |\\n  You are an API integration agent. Make GET, POST, PUT, or DELETE requests\\n  to external APIs and process the responses. Return structured summaries.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Probe API\\n    content: |\\n      Make a GET request to /users to fetch a list of user records.\\n      Also make a GET request to /posts to fetch a list of posts.\\n      Note the HTTP status code, response time, and top-level structure of each response.\\n  - name: Fetch Detail and Create Record\\n    content: |\\n      Fetch the detail for user ID 1 via GET /users/1.\\n      Then create a test post via POST /posts with body:\\n        { \\\"title\\\": \\\"API Test Post\\\", \\\"body\\\": \\\"Created by OE Runtime agent.\\\", \\\"userId\\\": 1 }\\n      Note the response status and the ID assigned to the new post.\\n  - name: Report\\n    content: |\\n      Summarize API activity:\\n      - Endpoints called and HTTP status codes\\n      - Users endpoint: record count and field schema\\n      - Posts endpoint: record count and field schema\\n      - Detail fetch: user name and email for ID 1\\n      - Created post: ID returned, confirmation of success\\nconnectors:\\n  - connection_name: Target API\\n    connection_type: http\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/rest-api/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -732,15 +989,50 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Make HTTP requests to a REST API and summarize responses\nConnectors: Target API (http)"
+            "description": "Make HTTP requests to a REST API and summarize responses\nConnectors: Target API (http)\nPowered by SKILL.md\n\nSteps:\n  • Probe API\n  • Fetch Detail and Create Record\n  • Report"
+          }
+        },
+        {
+          "name": "Sales Pipeline Demo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/skills-demo/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Demonstrates skills and plugins — runs local SKILL.md skills and a remote plugin\nPowered by SKILL.md"
           }
         },
         {
@@ -759,7 +1051,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Text to Speech Agent\\ndescription: Convert text to natural-sounding speech audio\\ninstructions: |\\n  You are a speech synthesis agent. Convert provided text to audio using ElevenLabs.\\n  Choose a clear, professional voice appropriate for the content type.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Prepare Content\\n    content: |\\n      Prepare the following text for speech synthesis. Clean it for audio delivery —\\n      expand abbreviations and confirm it reads well aloud:\\n\\n      \\\"Welcome to Open Enthrium. Your AI automation platform is ready. You can now\\n      build, deploy, and run intelligent agents that connect to any tool or service.\\n      Let's get started.\\\"\\n\\n  - name: Select Voice\\n    content: |\\n      GET /voices to retrieve the list of available ElevenLabs voices.\\n      Select a professional, clear voice suitable for corporate narration.\\n      Save the voice_id of the selected voice.\\n\\n  - name: Generate Audio\\n    content: |\\n      POST /text-to-speech/<voice_id> with body:\\n      {\\n        \\\"text\\\": \\\"<prepared text from step 1>\\\",\\n        \\\"model_id\\\": \\\"eleven_multilingual_v2\\\",\\n        \\\"voice_settings\\\": { \\\"stability\\\": 0.7, \\\"similarity_boost\\\": 0.8 }\\n      }\\n      The response is an audio file saved to a local temp path. Report that path.\\n\\n  - name: Report\\n    content: |\\n      Summarize the result:\\n      - Text converted (character count)\\n      - Voice selected (name and voice_id)\\n      - Voice settings used (stability, similarity_boost)\\n      - Output audio file path\\nconnectors:\\n  - connection_name: ElevenLabs\\n    connection_type: elevenlabs\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/speech-audio/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -767,15 +1059,15 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Convert text to natural-sounding speech audio\nConnectors: ElevenLabs (elevenlabs)"
+            "description": "Convert text to natural-sounding speech audio\nConnectors: ElevenLabs (elevenlabs)\nPowered by SKILL.md\n\nSteps:\n  • Prepare Content\n  • Select Voice\n  • Generate Audio\n  • Report"
           }
         },
         {
@@ -794,7 +1086,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Database Analyst\\ndescription: Query a SQL database and summarize results in plain English\\ninstructions: |\\n  You are a database analyst with read access to a SQL database.\\n  Run SELECT queries to explore the schema and answer data questions.\\n  Always explain results clearly in plain English.\\n  Do not run INSERT, UPDATE, DELETE, or DROP statements.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Explore Schema\\n    content: |\\n      Run the following queries one at a time:\\n      1. List all tables in the database\\n      2. For each table, fetch the column names and data types\\n      3. Count the rows in each table\\n  - name: Analyze Key Data\\n    content: |\\n      From the largest table found:\\n      - Fetch the 5 most recently created rows (use created_at or id DESC if available)\\n      - Calculate row counts grouped by any status or category column if one exists\\n      - Identify any columns with NULL values and count how many rows are affected\\n  - name: Report\\n    content: |\\n      Produce a database summary in plain English:\\n      - Tables found and their row counts\\n      - Schema of the largest table (column names and types)\\n      - Sample of 5 recent records\\n      - Data quality observations (nulls, unexpected values)\\n      - Suggested queries for further analysis\\nconnectors:\\n  - connection_name: My Database\\n    connection_type: postgresql\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/sql-databases/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -802,15 +1094,15 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Query a SQL database and summarize results in plain English\nConnectors: My Database (postgresql)"
+            "description": "Query a SQL database and summarize results in plain English\nConnectors: My Database (postgresql)\nPowered by SKILL.md\n\nSteps:\n  • Explore Schema\n  • Analyze Key Data\n  • Report"
           }
         },
         {
@@ -829,7 +1121,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Server Admin Agent\\ndescription: Run a health check on a remote Linux server via SSH\\ninstructions: |\\n  You are a server administrator. Use SSH to run commands on remote servers.\\n  Check system health, monitor resources, and report findings clearly.\\n  Always explain what each command is checking before running it.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Gather System Info\\n    content: |\\n      Run these SSH commands one at a time:\\n      1. uname -a  (kernel and OS info)\\n      2. uptime    (load average and uptime)\\n      3. df -h     (disk usage per mount point)\\n      4. free -m   (memory usage)\\n      5. top -bn1 | head -20  (CPU and top processes)\\n  - name: Check Services and Security\\n    content: |\\n      Run these SSH commands one at a time:\\n      1. ss -tlnp              (open ports and listening services)\\n      2. systemctl list-units --state=failed  (failed systemd services)\\n      3. last -n 10            (recent logins)\\n      4. journalctl -p err --since \\\"24 hours ago\\\" | tail -20  (recent errors)\\n  - name: Report\\n    content: |\\n      Produce a server health report:\\n      - OS and kernel version\\n      - Uptime and load average (flag if load > number of CPUs)\\n      - Disk usage (flag any mount > 80% full)\\n      - Memory usage (flag if used > 90%)\\n      - Open ports and services\\n      - Failed services (if any)\\n      - Recent logins\\n      - Recent error log entries\\n      - Overall status: HEALTHY / WARNING / CRITICAL\\nconnectors:\\n  - connection_name: My Server\\n    connection_type: ssh\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/ssh/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -837,15 +1129,15 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Run a health check on a remote Linux server via SSH\nConnectors: My Server (ssh)"
+            "description": "Run a health check on a remote Linux server via SSH\nConnectors: My Server (ssh)\nPowered by SKILL.md\n\nSteps:\n  • Gather System Info\n  • Check Services and Security\n  • Report"
           }
         },
         {
@@ -864,7 +1156,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Slack Notifier\\ndescription: Summarize channel activity and post a daily digest\\ninstructions: |\\n  You are a Slack assistant. Read channel activity and post concise digest messages.\\n  Never post duplicate messages. Keep posts brief and actionable.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Read Channel Activity\\n    content: |\\n      Fetch the last 20 messages from the #general channel.\\n      For each message note: author, timestamp, and a one-sentence summary of the content.\\n      Identify any messages that contain questions or action items that went unanswered.\\n  - name: Post Daily Digest\\n    content: |\\n      Compose and post a daily digest message to #general with the following format:\\n\\n      *📋 Daily Digest*\\n      - [Number] messages in the last session\\n      - Key topics discussed: [list up to 3]\\n      - Open questions needing response: [list any unanswered questions]\\n      - Reminder: stand-up at 9:00 AM tomorrow\\n\\n      Post the message using the Slack connector.\\n  - name: Report\\n    content: |\\n      Summarize what was done:\\n      - Messages read from #general\\n      - Topics and themes identified\\n      - Unanswered questions flagged\\n      - Digest message posted (confirm with message timestamp)\\nconnectors:\\n  - connection_name: My Slack\\n    connection_type: slack\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/team-messaging/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -872,50 +1164,15 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Summarize channel activity and post a daily digest\nConnectors: My Slack (slack)"
-          }
-        },
-        {
-          "name": "Telegram Notifier",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "x-api-key",
-                "value": "{{api_key}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Telegram Notifier\\ndescription: Read recent Telegram messages and send a summary notification\\ninstructions: |\\n  You are a Telegram bot agent. Read recent updates from the bot and send notification messages.\\n  Always confirm the bot is connected before reading messages.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Verify Bot Connection\\n    content: |\\n      Call the Telegram connector:\\n      GET /getMe\\n      Note the bot username, id, and display name to confirm the connection is working.\\n\\n  - name: Read Recent Updates\\n    content: |\\n      Call the Telegram connector:\\n      GET /getUpdates with params: { \\\"limit\\\": \\\"10\\\", \\\"allowed_updates\\\": \\\"message\\\" }\\n      For each message note: chat_id, from username, message text, and date.\\n      Remember the chat_id from the most recent message — you will use it to send the reply.\\n      If no updates are found, note that the bot has no recent messages and skip the next step.\\n\\n  - name: Send Summary Notification\\n    content: |\\n      Compose a brief summary of the recent messages.\\n      Use the chat_id from the most recent update (from Step 2).\\n      Send it via the Telegram connector:\\n      POST /sendMessage with body:\\n      {\\n        \\\"chat_id\\\": <chat_id from Step 2>,\\n        \\\"text\\\": \\\"<your summary message>\\\",\\n        \\\"parse_mode\\\": \\\"Markdown\\\"\\n      }\\n\\n  - name: Report\\n    content: |\\n      Summarize what was done:\\n      - Bot name and username confirmed\\n      - Number of recent messages read\\n      - Summary of message content\\n      - Notification sent to chat_id (confirm with message_id returned)\\nconnectors:\\n  - connection_name: My Telegram Bot\\n    connection_type: telegram\\n\",\n  \"params\": {},\n  \"input\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/run",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "run"
-              ]
-            },
-            "description": "Read recent Telegram messages and send a summary notification\nConnectors: My Telegram Bot (telegram)"
+            "description": "Summarize channel activity and post a daily digest\nConnectors: My Slack (slack)\nPowered by SKILL.md\n\nSteps:\n  • Read Channel Activity\n  • Post Daily Digest\n  • Report"
           }
         },
         {
@@ -934,7 +1191,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Video Creator Agent\\ndescription: Generates a short teaching video on any topic — creates a slide plan, generates images and narration via OpenAI, assembles and exports an MP4 via Canva.\\n\\ninstructions: |\\n  You are a video production agent. Follow each step in order and pass outputs\\n  from one step into the next. Do not skip steps or combine them.\\n\\nparams:\\n  - name: topic\\n    description: The topic or title of the video to create\\n    default: \\\"How AI Agents Work\\\"\\n\\nllm:\\n  provider: openai\\n  model: gpt-4o\\n\\nconnectors:\\n  - connection_name: OpenAI\\n    connection_type: restApi\\n  - connection_name: Canva\\n    connection_type: restApi\\n\\nsteps:\\n  - name: Plan Slides\\n    content: |\\n      You are a teaching video scriptwriter. Create exactly 5 slides for a short video on: {{topic}}\\n      Output a JSON array — one object per slide with these exact keys:\\n      {\\n        \\\"slide_number\\\": 1,\\n        \\\"title\\\": \\\"short slide title (max 8 words)\\\",\\n        \\\"bullets\\\": [\\\"point 1\\\", \\\"point 2\\\", \\\"point 3\\\"],\\n        \\\"narration\\\": \\\"20-30 words spoken aloud for this slide — conversational and clear\\\",\\n        \\\"image_prompt\\\": \\\"detailed DALL-E 3 prompt for a professional, relevant background image\\\"\\n      }\\n      Slide 1 = title and intro. Slides 2-4 = one key concept each. Slide 5 = summary and takeaway.\\n      Output only the JSON array, nothing else.\\n\\n  - name: Generate Slide Images\\n    use: OpenAI\\n    content: |\\n      For each of the 5 slides, POST /images/generations with:\\n        model: dall-e-3\\n        prompt: the slide's image_prompt\\n        size: 1792x1024\\n        quality: standard\\n        n: 1\\n      Collect all 5 image URLs in slide order. Return them as a numbered list.\\n\\n  - name: Generate Narration Audio\\n    use: OpenAI\\n    content: |\\n      Join all 5 slide narrations in order into one script, separated by \\\" ... \\\" between slides.\\n      POST /audio/speech with:\\n        model: tts-1\\n        voice: nova\\n        input: the combined narration script\\n      Return the audio file path where it was saved.\\n\\n  - name: Create Canva Presentation\\n    use: Canva\\n    content: |\\n      POST /designs with body:\\n        { \\\"design_type\\\": { \\\"type\\\": \\\"preset\\\", \\\"name\\\": \\\"Presentation\\\" } }\\n      Save the returned design ID. This is the blank presentation to fill with slides.\\n\\n  - name: Upload Images to Canva\\n    use: Canva\\n    content: |\\n      For each of the 5 slide image URLs from step 2, POST /assets with the image URL.\\n      Use name \\\"slide-1.png\\\" through \\\"slide-5.png\\\".\\n      Collect and return all 5 Canva asset IDs in order.\\n\\n  - name: Upload Audio to Canva\\n    use: Canva\\n    content: |\\n      POST /assets to upload the narration audio file saved in step 3.\\n      Use name \\\"narration.mp3\\\". Return the Canva audio asset ID.\\n\\n  - name: Add Slides to Design\\n    use: Canva\\n    content: |\\n      For each of the 5 slides, POST /designs/{designId}/pages:\\n        - Set the slide image asset as the page background\\n        - Add a text element for the slide title\\n        - Add a text element for the bullet points\\n      Add the narration audio as the design audio track.\\n\\n  - name: Export Video\\n    use: Canva\\n    content: |\\n      POST /exports with the design ID and body: { \\\"format\\\": { \\\"type\\\": \\\"mp4\\\" } }\\n      Poll GET /exports/{exportId} every 10 seconds until status is \\\"success\\\".\\n      Return the final MP4 download URL.\\n\\n  - name: Report\\n    content: |\\n      The video is ready. Provide:\\n      - The Canva MP4 download URL\\n      - A summary of each slide title\\n      - Topic covered and estimated video length\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/video-generation/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -942,15 +1199,15 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Generates a short teaching video on any topic — creates a slide plan, generates images and narration via OpenAI, assembles and exports an MP4 via Canva.\nConnectors: OpenAI (restApi), Canva (restApi)"
+            "description": "Generates a short teaching video on any topic — script, images, narration, and MP4 via Canva\nConnectors: OpenAI (restApi), Canva (restApi)\nPowered by SKILL.md\n\nSteps:\n  • Write the Script\n  • Generate Voiceover\n  • Create Visual Slides\n  • Export Slides\n  • Assemble Video\n  • Report"
           }
         },
         {
@@ -969,7 +1226,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Research Agent\\ndescription: Search the web and summarize findings with citations\\ninstructions: |\\n  You are a research agent. Use the Perplexity connector to search the web for current, accurate information.\\n  Always cite your sources and provide concise, well-structured summaries.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Search\\n    content: |\\n      Run 3 separate searches using the Perplexity connector. For each search,\\n      POST /chat/completions with body:\\n      {\\n        \\\"model\\\": \\\"sonar\\\",\\n        \\\"messages\\\": [{ \\\"role\\\": \\\"user\\\", \\\"content\\\": \\\"<search query>\\\" }]\\n      }\\n\\n      Search queries:\\n      1. \\\"Latest AI agent frameworks released in 2025\\\"\\n      2. \\\"Enterprise AI automation adoption trends 2025\\\"\\n      3. \\\"Top open-source LLM tools for business automation\\\"\\n\\n      For each result, extract: key findings, sources cited, and URLs.\\n\\n  - name: Synthesize Findings\\n    content: |\\n      From the 3 search results gathered:\\n      - Identify the top 5 themes that appear across multiple results\\n      - Note any conflicting information or differing perspectives\\n      - Select the 5 most credible and relevant sources to cite in the final report\\n\\n  - name: Report\\n    content: |\\n      Produce a structured research summary:\\n\\n      ## Key Findings\\n      [3-5 bullet points covering the main insights]\\n\\n      ## Trends\\n      [Top themes identified across sources]\\n\\n      ## Sources\\n      [Numbered list: title, publication, URL for each cited source]\\n\\n      ## Recommendations\\n      [2-3 actionable recommendations based on the research]\\nconnectors:\\n  - connection_name: Perplexity\\n    connection_type: perplexity-search\\n\",\n  \"params\": {},\n  \"input\": null\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/samples/web-search/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -977,15 +1234,15 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Search the web and summarize findings with citations\nConnectors: Perplexity (perplexity-search)"
+            "description": "Search the web and summarize findings with citations\nConnectors: Perplexity (perplexity-search)\nPowered by SKILL.md\n\nSteps:\n  • Search\n  • Synthesize Findings\n  • Report"
           }
         }
       ]

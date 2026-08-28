@@ -106,6 +106,33 @@ const coreItems = [
 
 // ── samples ───────────────────────────────────────────────────────────────────
 
+function buildProjectFolder(sampleDir) {
+  const projectFile = path.join(sampleDir, "oe-project.json");
+  if (!fs.existsSync(projectFile)) return null;
+
+  let project;
+  try { project = JSON.parse(fs.readFileSync(projectFile, "utf8")); }
+  catch { console.warn(`  ⚠  Could not parse ${projectFile}`); return null; }
+
+  const folderName = project.name || path.basename(sampleDir);
+  const agents     = project.agents || [];
+  const items      = [];
+
+  for (const agent of agents) {
+    const agentFile = path.join(sampleDir, agent.file);
+    if (!fs.existsSync(agentFile)) continue;
+    const rawYaml = fs.readFileSync(agentFile, "utf8");
+    items.push(postRequest(
+      agent.name + (agent.default ? " (default)" : ""),
+      "/run",
+      { yaml: rawYaml.replace(/\r\n/g, "\n"), params: {}, input: "run" },
+      agent.description || ""
+    ));
+  }
+
+  return { name: folderName, description: project.description || "", item: items };
+}
+
 function buildSampleRequest(sampleDir) {
   const agentFile = path.join(sampleDir, "agent.yaml");
   if (!fs.existsSync(agentFile)) return null;
@@ -121,8 +148,38 @@ function buildSampleRequest(sampleDir) {
     .map(c => `${c.connection_name} (${c.connection_type || c.connection_name})`)
     .join(", ");
 
-  const description = [agentDesc, connectors ? `Connectors: ${connectors}` : ""]
-    .filter(Boolean).join("\n");
+  // Check if this agent uses SKILL.md (skills: field present)
+  const hasSkills = Array.isArray(parsed.skills) && parsed.skills.length > 0;
+
+  // Read SKILL.md description if present
+  let skillDesc = "";
+  if (hasSkills) {
+    const skillMdPath = path.join(sampleDir, "SKILL.md");
+    if (fs.existsSync(skillMdPath)) {
+      const skillContent = fs.readFileSync(skillMdPath, "utf8");
+      // Extract steps from ## Step N: headings
+      const steps = [...skillContent.matchAll(/^##\s+Step\s+\d+[:\s]+(.+)$/gm)]
+        .map(m => `  • ${m[1].trim()}`).join("\n");
+      if (steps) skillDesc = `\nSteps:\n${steps}`;
+    }
+  }
+
+  const description = [
+    agentDesc,
+    connectors ? `Connectors: ${connectors}` : "",
+    hasSkills  ? "Powered by SKILL.md" : "",
+    skillDesc,
+  ].filter(Boolean).join("\n");
+
+  // SKILL.md agents use /run-file (SKILL.md path must resolve on disk)
+  if (hasSkills) {
+    return postRequest(
+      agentName,
+      "/run-file",
+      { file: agentFile.replace(/\\/g, "/"), params: {}, input: "run" },
+      description
+    );
+  }
 
   return postRequest(
     agentName,
@@ -145,7 +202,18 @@ function buildSamplesFolder() {
 
   const items = [];
   for (const entry of entries) {
-    const req = buildSampleRequest(path.join(SAMPLES_DIR, entry));
+    const dir = path.join(SAMPLES_DIR, entry);
+
+    // oe-project.json → multi-agent folder
+    const folder = buildProjectFolder(dir);
+    if (folder) {
+      items.push(folder);
+      console.log(`  ✓  ${entry}  →  folder "${folder.name}" (${folder.item.length} agents)`);
+      continue;
+    }
+
+    // single agent.yaml
+    const req = buildSampleRequest(dir);
     if (req) {
       items.push(req);
       console.log(`  ✓  ${entry}  →  "${req.name}"`);

@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.8.5] — 2026-08-28
+
+### Added
+- **SKILL.md path resolution fix** — `skills: - path: ./SKILL.md` now resolves correctly when the path already ends in `.md` (previously the engine incorrectly appended an extra `/SKILL.md`).
+- **HTTP API skills** — `runAgentServer` in `server.js` now supports `skills:` field. Agents with only `skills:` (no inline steps) skip the empty LLM call and execute the SKILL.md directly. Shared `runSkillsServer` helper added.
+- **23 SKILL.md sample files** — all samples converted from inline agent.yaml steps to agentskills.io-compliant SKILL.md files.
+- **Postman generator** — detects `skills:` field and routes to `/run-file`; detects `oe-project.json` and generates sub-folders; `oe-native-*` folders included.
+- **`postgres` adapter alias** — `registry.js` now maps `postgres` → `database` adapter alongside `postgresql`.
+
+### Changed
+- **Sample folders** — `chains`, `my-ai-project`, `telegram` renamed to `oe-native-*` prefix.
+- **agent.yaml format** — all samples use `skills: - path: ./SKILL.md` instead of inline `instructions` + `steps`.
+
+---
+
 ## [v1.8.4] — 2026-08-26
 
 ### Fixed

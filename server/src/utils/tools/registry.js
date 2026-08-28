@@ -54,6 +54,7 @@ const filesystem     = tryRequire("./adapters/filesystem");
 const ADAPTERS = {
   // SQL databases
   postgresql:    database,
+  postgres:      database,
   mysql:         database,
   mssql:         database,
   oracle:        database,

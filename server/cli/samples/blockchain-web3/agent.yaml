@@ -1,11 +1,10 @@
 name: Blockchain Agent
-description: Check ETH wallet balance
-instructions: |
-  You are a blockchain data agent. Use the tools to fetch data and respond concisely.
-steps:
-  - name: Check Balance
-    content: |
-      Get the ETH balance for the configured wallet address. Report the address and balance in ETH. Nothing else.
+description: Query blockchain data — balances, transactions, and smart contracts
+
 connectors:
   - connection_name: Ethereum
     connection_type: web3
+
+skills:
+  - path: ./SKILL.md
+    trigger_type: auto

@@ -80,15 +80,90 @@ function buildAgentSpec(agentYaml, params, input) {
 
 const MAX_DEPTH = 5;
 
+// ── SKILL.md parser (server-side) ─────────────────────────────────────────────
+
+function parseSkillMdServer(content) {
+  const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!fmMatch) return null;
+  const front = yaml.load(fmMatch[1]) || {};
+  const body  = fmMatch[2].trim();
+  const steps = [];
+  const stepRegex = /^##\s+Step\s+\d+[:\s]+(.+)$/gm;
+  let   lastMatch, lastIndex = 0;
+  const bodyLines = body.split("\n");
+  let   stepStarts = [];
+  bodyLines.forEach((line, i) => {
+    if (/^##\s+Step\s+\d+/.test(line)) stepStarts.push(i);
+  });
+  if (stepStarts.length === 0) {
+    return { name: front.name, description: front.description, instructions: body, steps: [{ name: "Run", content: body }] };
+  }
+  const parsedSteps = stepStarts.map((startLine, idx) => {
+    const endLine = stepStarts[idx + 1] ?? bodyLines.length;
+    const header  = bodyLines[startLine].replace(/^##\s+Step\s+\d+[:\s]+/, "").trim();
+    const content = bodyLines.slice(startLine + 1, endLine).join("\n").trim();
+    return { name: header, content };
+  });
+  const preamble = bodyLines.slice(0, stepStarts[0]).join("\n").trim();
+  return { name: front.name, description: front.description, instructions: preamble, steps: parsedSteps };
+}
+
+async function runSkillsServer(skills, parentOutput, agentFile, config, params, depth) {
+  const MAX_DEPTH = 5;
+  if (!skills?.length || depth >= MAX_DEPTH) return parentOutput;
+  let lastOutput = parentOutput;
+  for (const skill of skills) {
+    const skillPath = skill.path;
+    if (!skillPath) continue;
+    const resolved = skillPath.toLowerCase().endsWith(".md") ? skillPath : path.join(skillPath, "SKILL.md");
+    const fullPath = agentFile ? path.join(path.dirname(agentFile), resolved) : resolved;
+    if (!fs.existsSync(fullPath)) { console.warn(`  ⚠  SKILL.md not found: ${fullPath}`); continue; }
+    const content  = fs.readFileSync(fullPath, "utf8");
+    const skillSpec = parseSkillMdServer(content);
+    if (!skillSpec) { console.warn(`  ⚠  Invalid SKILL.md: ${fullPath}`); continue; }
+    // Merge parent agent connectors with skill's own if any
+    const skillYaml    = yaml.load(fs.readFileSync(agentFile, "utf8")) || {};
+    const connectors   = prepareConnectors(skillYaml.connectors, config.connectors);
+    const contextInput = lastOutput
+      ? `Context from previous step:\n\n${lastOutput}\n\nNow execute your task.`
+      : "Execute your task as described.";
+    const agentSpec = {
+      name:         skillSpec.name || "Skill",
+      instructions: skillSpec.instructions || "",
+      steps:        skillSpec.steps,
+    };
+    const { output } = await engine.run(agentSpec, config.llm, connectors, {
+      onToolCall:   () => {},
+      onToolResult: () => {},
+      onError:      (err) => { throw err; },
+    });
+    lastOutput = output;
+  }
+  return lastOutput;
+}
+
 async function runAgentServer(agentFile, agentYaml, config, input, params, depth = 0) {
   const connectors = prepareConnectors(agentYaml.connectors, config.connectors);
   const agentSpec  = buildAgentSpec(agentYaml, params, input);
 
-  const { output } = await engine.run(agentSpec, config.llm, connectors, {
-    onToolCall:   () => {},
-    onToolResult: () => {},
-    onError:      (err) => { throw err; },
-  });
+  const hasSkillsOnly = agentYaml.skills?.length && !agentYaml.steps?.length;
+
+  let output;
+  if (hasSkillsOnly) {
+    // Skip the empty main agent call — go straight to skills
+    output = await runSkillsServer(agentYaml.skills, "", agentFile, config, params, depth + 1);
+  } else {
+    const result = await engine.run(agentSpec, config.llm, connectors, {
+      onToolCall:   () => {},
+      onToolResult: () => {},
+      onError:      (err) => { throw err; },
+    });
+    output = result.output;
+    // Run skills after main agent if both present
+    if (agentYaml.skills?.length) {
+      output = await runSkillsServer(agentYaml.skills, output, agentFile, config, params, depth + 1);
+    }
+  }
 
   const result = {
     agent:          agentYaml.name || (agentFile ? path.basename(agentFile) : "inline"),
