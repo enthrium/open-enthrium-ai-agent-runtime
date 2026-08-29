@@ -152,5 +152,4 @@ if (process.env.NODE_ENV === "production") {
 app.listen(PORT, async () => {
   console.log(`Open Enthrium server running on port ${PORT}`);
   await recoverPendingJobs();
-  try { await require("./telemetry/bootstrap")(prisma); } catch {}
 });

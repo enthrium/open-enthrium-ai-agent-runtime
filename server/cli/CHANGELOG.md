@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.8.7] — 2026-08-29
+
+### Changed
+- **README rewritten** — `README.md` and `npm/README.md` simplified; SKILL.md execution (folder structure + `agent.yaml` + `SKILL.md` + `oe-config.json` + run command) is now the primary usage pattern. Removed connector catalog table, binary vs node section, messaging platforms deep-dive.
+- **CONTRIBUTING.md simplified** — concise bullet format with hyperlinks to `skills/` folder and agentskills.io.
+
+---
+
 ## [v1.8.6] — 2026-08-28
 
 ### Changed

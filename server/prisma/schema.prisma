@@ -292,3 +292,16 @@ model ProjectRun {
   agent       ProjectAgent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
   triggeredBy User?         @relation("ProjectRunTrigger", fields: [triggeredByUserId], references: [id], onDelete: SetNull)
 }
+
+model ConnectionMaster {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  label       String
+  category    String   @default("")
+  color       String   @default("")
+  initial     String   @default("")
+  adapterType String   @default("rest-api")
+  fields      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
