@@ -67,7 +67,7 @@ const { runAgentFromObject } = require("@openenthrium/oe-runtime-sdk");
 
 const agent = {
   name: "Database Analyst",
-  skills: [{ path: "./SKILL.md", trigger_type: "auto" }],
+  skills: [{ path: "./", trigger_type: "auto" }],
   connectors: [{ connection_name: "My Database", connection_type: "postgresql" }],
 };
 

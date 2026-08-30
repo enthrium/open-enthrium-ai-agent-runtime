@@ -1,9 +1,10 @@
 ---
-name: File Storage Agent
-version: 1.0.0
-description: Upload, list, download, and manage files in S3-compatible storage
-author: Open Enthrium
+name: file-storage
+description: Upload, list, download, and manage files in S3-compatible storage. Use when you need to inspect or organize files in a cloud storage bucket.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a file management agent with access to S3-compatible storage.

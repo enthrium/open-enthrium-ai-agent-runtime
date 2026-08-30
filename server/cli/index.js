@@ -117,7 +117,7 @@ for (let i = 1; i < args.length; i++) {
 // If a folder is passed, look for agent.yaml inside it.
 
 // Always resolve to an absolute path immediately — npx changes cwd internally,
-// so any relative path would break later path.resolve calls inside runSkills/runPlugins.
+// so any relative path would break later path.resolve calls inside runSkills.
 let agentFile = path.resolve(agentArg);
 if (fs.existsSync(agentFile) && fs.statSync(agentFile).isDirectory()) {
   agentFile = path.join(agentFile, "agent.yaml");
@@ -185,45 +185,6 @@ function askApproval(agentName) {
       resolve(answer.trim().toLowerCase() === "y");
     });
   });
-}
-
-// ── chain runner ──────────────────────────────────────────────────────────────
-
-async function runChains(chains, output, currentAgentFile, depth) {
-  const MAX_DEPTH = 5;
-  if (!chains?.length) return;
-  if (depth >= MAX_DEPTH) {
-    console.warn(`\n  ⚠  Max chain depth (${MAX_DEPTH}) reached — stopping`);
-    return;
-  }
-
-  for (const chain of chains) {
-    const nextAgent   = chain.next_agent   || chain.nextAgent;
-    const triggerType = chain.trigger_type || chain.triggerType || "auto";
-
-    if (!nextAgent) continue;
-
-    console.log(`\n${"─".repeat(52)}`);
-    console.log(`  🔗  Chain: ${nextAgent}`);
-    console.log(`      Trigger    : ${triggerType}`);
-
-    if (triggerType === "manual") {
-      console.log(`      Output     : ${output.slice(0, 120)}${output.length > 120 ? "…" : ""}`);
-      const approved = await askApproval(nextAgent);
-      if (!approved) {
-        console.log(`  ⏭  Chain rejected\n`);
-        continue;
-      }
-    }
-
-    const nextPath = path.resolve(path.dirname(path.resolve(currentAgentFile)), nextAgent);
-    if (!fs.existsSync(nextPath)) {
-      console.warn(`  ⚠  Chain agent not found: ${nextPath}`);
-      continue;
-    }
-
-    await runAgent(nextPath, output, depth);
-  }
 }
 
 // ── SKILL.md parser ───────────────────────────────────────────────────────────
@@ -307,9 +268,11 @@ function fetchUrl(url) {
 }
 
 // ── Run a parsed SKILL.md spec ─────────────────────────────────────────────────
+// scopedConnectors: pre-filtered connector list from skill-level connectors:[].
+// Pass null to use all connectors from oe-config.json (legacy / no scoping).
 
-async function runSkillSpec(skillSpec, label, inputContext) {
-  const all        = allConnectorsFromConfig();
+async function runSkillSpec(skillSpec, label, inputContext, scopedConnectors = null) {
+  const all        = scopedConnectors !== null ? scopedConnectors : allConnectorsFromConfig();
   const connectors = skillSpec.allowedTools
     ? all.filter(c => skillSpec.allowedTools.some(t =>
         t === c.type || t === c.name ||
@@ -349,8 +312,15 @@ async function runSkillSpec(skillSpec, label, inputContext) {
 }
 
 // ── Skills runner — agent.yaml skills: block ───────────────────────────────────
-// Each entry: { path: "./skill-folder", trigger_type: "auto" | "manual" }
-// Resolves ./skill-folder/SKILL.md relative to the parent agent file.
+// Each entry:
+//   path:        "./skill-folder" | "https://…"  (local folder or remote URL)
+//   trigger_type: "auto" | "manual"
+//   connectors:  ["My Kafka", "My Email"]         (optional — scope connectors to this skill)
+//   execution:   "serial" | "parallel"            (optional — default "serial")
+//
+// execution: parallel  — skill fires concurrently with other parallel skills.
+// execution: serial    — waits for all pending parallel skills to finish, then runs.
+// Flush order: each serial skill (or end of list) drains the parallel batch first.
 
 async function runSkills(skills, output, currentAgentFile, depth) {
   const MAX_DEPTH = 5;
@@ -360,84 +330,81 @@ async function runSkills(skills, output, currentAgentFile, depth) {
     return output;
   }
 
-  let lastOutput = output;
+  let lastOutput    = output;
+  let parallelBatch = []; // pending parallel skill thunks
+
+  // Flush: await all parallel promises, last result becomes the next serial's input
+  async function flushParallel() {
+    if (!parallelBatch.length) return;
+    const results = await Promise.all(parallelBatch.map(fn => fn()));
+    lastOutput    = results[results.length - 1];
+    parallelBatch = [];
+  }
+
+  // Load SKILL.md content — local or remote
+  async function loadContent(skillPath) {
+    if (skillPath.startsWith("http://") || skillPath.startsWith("https://")) {
+      console.log(`      Fetching SKILL.md…`);
+      return fetchUrl(skillPath);
+    }
+    const resolvedPath = skillPath.toLowerCase().endsWith(".md") ? skillPath : path.join(skillPath, "SKILL.md");
+    const fullPath     = path.join(path.dirname(currentAgentFile), resolvedPath);
+    if (!fs.existsSync(fullPath)) throw new Error(`SKILL.md not found: ${fullPath}`);
+    return fs.readFileSync(fullPath, "utf8");
+  }
 
   for (const skill of skills) {
     const skillPath   = skill.path;
     const triggerType = skill.trigger_type || skill.triggerType || "auto";
+    const execution   = skill.execution || "serial";
     if (!skillPath) continue;
 
-    const label    = path.basename(skillPath);
-    const resolvedSkillPath = skillPath.toLowerCase().endsWith(".md") ? skillPath : path.join(skillPath, "SKILL.md");
-    const fullPath = path.join(path.dirname(currentAgentFile), resolvedSkillPath);
+    const isRemote = skillPath.startsWith("http://") || skillPath.startsWith("https://");
+    const label    = isRemote
+      ? skillPath.split("/").filter(Boolean).slice(-2).join("/")
+      : path.basename(skillPath);
 
     console.log(`\n${"─".repeat(52)}`);
     console.log(`  🧩  Skill   : ${label}`);
-    console.log(`      Trigger : ${triggerType}`);
+    if (isRemote) console.log(`      URL     : ${skillPath}`);
+    console.log(`      Trigger : ${triggerType}  Execution: ${execution}`);
 
     if (triggerType === "manual") {
+      await flushParallel(); // drain parallel batch before prompting
       console.log(`      Output  : ${lastOutput.slice(0, 120)}${lastOutput.length > 120 ? "…" : ""}`);
       const approved = await askApproval(label);
       if (!approved) { console.log(`  ⏭  Skill skipped\n`); continue; }
     }
 
-    if (!fs.existsSync(fullPath)) {
-      console.warn(`  ⚠  SKILL.md not found: ${fullPath}`);
-      continue;
-    }
-
-    const skillSpec = parseSkillMd(fs.readFileSync(fullPath, "utf8"), fullPath);
-    lastOutput      = await runSkillSpec(skillSpec, label, lastOutput);
-  }
-
-  return lastOutput;
-}
-
-// ── Plugins runner — agent.yaml plugins: block ─────────────────────────────────
-// Each entry: { url: "https://github.com/…", trigger_type: "auto" | "manual" }
-// Fetches SKILL.md from the URL and executes it.
-
-async function runPlugins(plugins, output, depth) {
-  const MAX_DEPTH = 5;
-  if (!plugins?.length) return output;
-  if (depth >= MAX_DEPTH) {
-    console.warn(`\n  ⚠  Max plugin depth (${MAX_DEPTH}) reached — stopping`);
-    return output;
-  }
-
-  let lastOutput = output;
-
-  for (const plugin of plugins) {
-    const url         = plugin.url;
-    const triggerType = plugin.trigger_type || plugin.triggerType || "auto";
-    if (!url) continue;
-
-    const label = url.split("/").filter(Boolean).slice(-2).join("/");
-
-    console.log(`\n${"─".repeat(52)}`);
-    console.log(`  🔌  Plugin  : ${label}`);
-    console.log(`      URL     : ${url}`);
-    console.log(`      Trigger : ${triggerType}`);
-
-    if (triggerType === "manual") {
-      console.log(`      Output  : ${lastOutput.slice(0, 120)}${lastOutput.length > 120 ? "…" : ""}`);
-      const approved = await askApproval(label);
-      if (!approved) { console.log(`  ⏭  Plugin skipped\n`); continue; }
-    }
-
     let content;
     try {
-      console.log(`      Fetching SKILL.md…`);
-      content = await fetchUrl(url);
+      content = await loadContent(skillPath);
     } catch (err) {
-      console.warn(`  ⚠  Failed to fetch plugin: ${err.message}`);
+      console.warn(`  ⚠  ${err.message}`);
       continue;
     }
 
-    const skillSpec = parseSkillMd(content, url);
-    lastOutput      = await runSkillSpec(skillSpec, label, lastOutput);
+    const skillSpec = parseSkillMd(content, skillPath);
+
+    // Resolve skill-level connector scope: connectors: ["My Kafka"] filters oe-config.json
+    // undefined (field absent)  → null → pass all connectors (legacy behaviour)
+    // []  (empty array)         → []  → pass zero connectors (no tools)
+    // ["My Kafka"]              → filtered list
+    const connectorNames   = skill.connectors; // string[] | undefined
+    const scopedConnectors = Array.isArray(connectorNames)
+      ? allConnectorsFromConfig().filter(c => connectorNames.includes(c.name))
+      : null;
+
+    if (execution === "parallel") {
+      const capturedOutput = lastOutput; // snapshot for this parallel branch
+      parallelBatch.push(() => runSkillSpec(skillSpec, label, capturedOutput, scopedConnectors));
+    } else {
+      await flushParallel(); // drain parallel batch before running this serial skill
+      lastOutput = await runSkillSpec(skillSpec, label, lastOutput, scopedConnectors);
+    }
   }
 
+  await flushParallel(); // drain any remaining parallel skills at end of list
   return lastOutput;
 }
 
@@ -479,20 +446,28 @@ async function runAgent(agentFile, inputContext, depth = 0) {
   }
   console.log(`\n${line}\n`);
 
-  const { output } = await engine.run(agentSpec, llmConfig, connectors, {
-    onToolCall:   (name)         => console.log(`  🔧  ${name}`),
-    onToolResult: (name, result) => console.log(`      ↳ ${result.slice(0, 300)}${result.length > 300 ? "…" : ""}`),
-    onError:      (err)          => { throw err; },
-  });
+  // Skip LLM call entirely when no instructions or steps are defined — nothing to run.
+  const hasWork = agentSpec.systemPrompt.trim() || agentSpec.workflow.length;
+  let output = inputContext || "";
 
-  console.log(`\n${line}\n`);
-  console.log(output);
-  console.log(`\n✅  Done${depth > 0 ? ` — ${agentYaml.name || path.basename(agentFile)}` : ""}\n`);
+  if (hasWork) {
+    const result = await engine.run(agentSpec, llmConfig, connectors, {
+      onToolCall:   (name)         => console.log(`  🔧  ${name}`),
+      onToolResult: (name, result) => console.log(`      ↳ ${result.slice(0, 300)}${result.length > 300 ? "…" : ""}`),
+      onError:      (err)          => { throw err; },
+    });
+    output = result.output;
 
-  // Process chains → skills → plugins after this agent completes
-  await runChains(agentYaml.chains, output, agentFile, depth + 1);
-  let pipelineOutput = await runSkills(agentYaml.skills, output, agentFile, depth + 1);
-  pipelineOutput     = await runPlugins(agentYaml.plugins, pipelineOutput, depth + 1);
+    console.log(`\n${line}\n`);
+    console.log(output);
+    console.log(`\n✅  Done${depth > 0 ? ` — ${agentYaml.name || path.basename(agentFile)}` : ""}\n`);
+  }
+
+  // plugins: is a legacy alias — convert { url } entries to { path } and merge into skills.
+  const legacyPlugins = (agentYaml.plugins || []).map(p => ({ path: p.url, trigger_type: p.trigger_type || p.triggerType || "auto" }));
+  const allSkills     = [...(agentYaml.skills || []), ...legacyPlugins];
+
+  const pipelineOutput = await runSkills(allSkills, output, agentFile, depth + 1);
 
   return pipelineOutput;
 }

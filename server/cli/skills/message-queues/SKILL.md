@@ -1,9 +1,10 @@
 ---
-name: Queue Publisher
-version: 1.0.0
-description: Publish messages to Kafka topics and consume them to verify delivery
-author: Open Enthrium
+name: message-queues
+description: Publish messages to Kafka topics and consume them to verify delivery. Use when you need to test message queue connectivity or trigger event-driven workflows.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a message queue agent. Publish structured messages to Kafka topics

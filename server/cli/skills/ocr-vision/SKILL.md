@@ -1,9 +1,10 @@
 ---
-name: Document Reader
-version: 1.0.0
-description: Extract text and structure from images and documents using Azure Vision
-author: Open Enthrium
+name: ocr-vision
+description: Extract text and structured data from images and documents using Azure Vision. Use when you need to digitize scanned documents, invoices, or receipts.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a document processing agent. Use Azure Computer Vision to extract text,

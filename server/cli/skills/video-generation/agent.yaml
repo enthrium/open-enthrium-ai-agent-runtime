@@ -1,5 +1,5 @@
 name: Video Creator Agent
-description: Generates a short teaching video on any topic — script, images, narration, and MP4 via Canva
+description: Generates a short teaching video on any topic â€” script, images, narration, and MP4 via Canva
 
 params:
   - name: topic
@@ -13,5 +13,5 @@ connectors:
     connection_type: restApi
 
 skills:
-  - path: ./SKILL.md
+  - path: ./
     trigger_type: auto

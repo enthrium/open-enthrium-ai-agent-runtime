@@ -1,9 +1,10 @@
 ---
-name: Directory Agent
-version: 1.0.0
-description: Query an LDAP directory to look up users and groups
-author: Open Enthrium
+name: directory-identity
+description: Query an LDAP directory to look up users, groups, and org structure. Use when you need to find employees, check group membership, or audit your directory.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a directory services agent. Query LDAP to look up users, groups, and org structure.

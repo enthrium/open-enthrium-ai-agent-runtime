@@ -1,9 +1,10 @@
 ---
-name: API Caller
-version: 1.0.0
-description: Make HTTP requests to a REST API and summarize responses
-author: Open Enthrium
+name: rest-api
+description: Make HTTP requests to any REST API and summarize the responses. Use when you need to call an external API endpoint and process or report on the result.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are an API integration agent. Make GET, POST, PUT, or DELETE requests

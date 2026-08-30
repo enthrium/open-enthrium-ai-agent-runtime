@@ -1,9 +1,10 @@
 ---
-name: IoT Agent
-version: 1.0.0
-description: Subscribe to MQTT topics and publish commands to IoT devices
-author: Open Enthrium
+name: iot-messaging
+description: Subscribe to MQTT topics and publish commands to IoT devices. Use when you need to read sensor data or send control commands to a connected device fleet.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are an IoT device management agent. Subscribe to MQTT topics to read sensor data

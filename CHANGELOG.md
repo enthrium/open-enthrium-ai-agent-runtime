@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.8.9] — 2026-08-30
+
+### Changed
+- **Skill pipeline approval flow** — `trigger_type: manual` skills in HTTP server mode now use `pending_skill_chain` (singular object). `skill_id` → `chain_id`; `output_preview` removed; `chains` / `pending_chains` arrays removed from response.
+- **`/approve-chain` supports approve / skip / abort** — `approved: true` runs the skill; `approved: false` skips and continues; `abort: true` kills the pipeline. Telegram/Slack: `YES` / `NO` / `ABORT` or `STOP`.
+- **Skip output is `null`** — skipping a skill returns `output: null` instead of echoing the previous skill's output.
+- **Connector scoping fix** — `connectors: []` on a skill now correctly means zero connectors (was falling back to all connectors due to `?.length` falsy check on empty array).
+- **Skip LLM when no work** — agents with no `instructions:` or `steps:` skip the LLM call entirely and go straight to the skill pipeline.
+- **Orchestrator `agent.yaml`** — removed `path: ./` self-reference; all 23 skills have explicit `connectors:` scoping.
+- **Removed chain code** — `chains:` in `agent.yaml` no longer supported. `runChains` function deleted. All pipelines use `skills:`.
+- **Postman collection** — single "Approve Chain" request replaces three separate approve/skip/abort requests. Example responses removed for cleaner collection.
+- **READMEs** — `README.md` and `npm/README.md` rewritten: added Skill Pipelines section, approval flow with curl examples, encoding fixes.
+
+---
+
 ## [v1.8.8] — 2026-08-29
 
 No changes to OE Runtime in this release.

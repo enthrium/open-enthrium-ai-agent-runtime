@@ -1,9 +1,10 @@
 ---
-name: Server Admin Agent
-version: 1.0.0
-description: Run a health check on a remote Linux server via SSH
-author: Open Enthrium
+name: ssh
+description: Run a health check on a remote Linux server via SSH. Use when you need to audit server resources, check running services, or review system logs.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a server administrator. Use SSH to run commands on remote servers.

@@ -1,9 +1,10 @@
 ---
-name: Drive Manager
-version: 1.0.0
-description: Read, write, and organize files in Google Drive
-author: Open Enthrium
+name: cloud-drives
+description: Read, write, and organize files in Google Drive. Use when you need to list, find, or manage files in a connected cloud drive.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a file organization agent with access to Google Drive.

@@ -1,0 +1,12 @@
+name: Chain Starter
+description: Demonstrates the OE skills pipeline — auto and manual skills in sequence
+
+skills:
+  - path: ./main-task
+    trigger_type: auto
+
+  - path: ./followup
+    trigger_type: auto
+
+  - path: ./manual-review
+    trigger_type: manual

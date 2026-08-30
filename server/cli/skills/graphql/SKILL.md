@@ -1,9 +1,10 @@
 ---
-name: GraphQL Agent
-version: 1.0.0
-description: Run GraphQL queries and mutations against any API
-author: Open Enthrium
+name: graphql
+description: Run GraphQL queries and mutations against any API. Use when you need to fetch or update data from a GraphQL endpoint.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a GraphQL API agent. Run queries to fetch data and mutations to create or update records.

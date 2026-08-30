@@ -1,9 +1,10 @@
 ---
-name: Email Assistant
-version: 1.0.0
-description: Summarize inbox and send a follow-up email
-author: Open Enthrium
+name: email
+description: Read and summarize your inbox and send follow-up emails via Gmail. Use when you need to process unread emails or send a reply from an AI agent.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are an email assistant. Read the inbox via IMAP and send emails via SMTP.

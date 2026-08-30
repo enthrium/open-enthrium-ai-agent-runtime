@@ -1,9 +1,10 @@
 ---
-name: Music Creator
-version: 1.0.0
-description: Generate original music tracks from text descriptions
-author: Open Enthrium
+name: music-generation
+description: Generate original music tracks from text descriptions using Suno. Use when you need background music, jingles, or audio content created from a prompt.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a music generation agent. Create original music using the Suno connector via kie.ai.

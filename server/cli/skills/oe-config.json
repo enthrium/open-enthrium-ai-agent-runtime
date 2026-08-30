@@ -174,6 +174,30 @@
       "connection_type": "web3",
       "baseUrl": "https://ethereum.publicnode.com",
       "walletAddress": "0xYOUR_WALLET_ADDRESS"
+    },
+    {
+      "_comment": "--- file-storage ---",
+      "connection_name": "My S3 Bucket",
+      "connection_type": "s3",
+      "region": "us-east-1",
+      "bucket": "YOUR_BUCKET_NAME",
+      "accessKeyId": "YOUR_AWS_ACCESS_KEY_ID",
+      "secretAccessKey": "YOUR_AWS_SECRET_ACCESS_KEY"
+    },
+    {
+      "_comment": "--- blog-to-video ---",
+      "connection_name": "Blog",
+      "connection_type": "restApi",
+      "baseUrl": "https://www.openenthrium.com"
+    },
+    {
+      "_comment": "--- directory-identity ---",
+      "connection_name": "Active Directory",
+      "connection_type": "ldap",
+      "url": "ldap://YOUR_AD_HOST:389",
+      "baseDN": "dc=yourcompany,dc=com",
+      "username": "cn=admin,dc=yourcompany,dc=com",
+      "password": "YOUR_LDAP_PASSWORD"
     }
   ]
 }

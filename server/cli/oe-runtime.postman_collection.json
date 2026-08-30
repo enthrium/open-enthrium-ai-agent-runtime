@@ -12,7 +12,7 @@
     },
     {
       "key": "api_key",
-      "value": "your-api-key",
+      "value": "your-secret-api-key",
       "type": "string"
     }
   ],
@@ -37,7 +37,8 @@
           ]
         },
         "description": "Liveness check — returns runtime version."
-      }
+      },
+      "response": []
     },
     {
       "name": "Run Agent (inline YAML)",
@@ -71,8 +72,9 @@
             "run"
           ]
         },
-        "description": "Run an agent by passing YAML inline.\n\nReturns:\n  { success, agent, output, chains, pending_chains, duration_ms }\n\nNote: chains: with relative next_agent paths require /run-file instead (path resolution needs a base directory)."
-      }
+        "description": "Run an agent by passing YAML inline.\n\nReturns:\n  { success, agent, output, pending_skill_chain, duration_ms }\n\n- pending_skill_chain: present when a manual skill is paused awaiting approval\n  { chain_id, skill_name } — use chain_id with POST /approve-chain to continue\n\nNote: skills: with relative SKILL.md paths require /run-file instead."
+      },
+      "response": []
     },
     {
       "name": "Run Agent (from file on disk)",
@@ -106,8 +108,9 @@
             "run-file"
           ]
         },
-        "description": "Run an agent from a YAML file path on the server's disk.\n\nReturns:\n  { success, agent, output, chains, pending_chains, duration_ms }\n\n- chains: array of auto-chain results (nested, recursive)\n- pending_chains: array of manual chains awaiting approval via POST /approve-chain"
-      }
+        "description": "Run an agent from a YAML file path on the server's disk.\n\nReturns:\n  { success, agent, output, pending_skill_chain, duration_ms }\n\n- pending_skill_chain: present when a manual skill is paused awaiting approval\n  { chain_id, skill_name } — use chain_id with POST /approve-chain to continue"
+      },
+      "response": []
     },
     {
       "name": "Approve Chain",
@@ -125,7 +128,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"chain_id\": \"PASTE_CHAIN_ID_HERE\",\n  \"approved\": true\n}",
+          "raw": "{\n  \"chain_id\": \"{{chain_id}}\",\n  \"approved\": true,\n  \"abort\": false\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -141,11 +144,12 @@
             "approve-chain"
           ]
         },
-        "description": "Approve or reject a pending manual chain.\n\nGet the chain_id from pending_chains[] in a /run or /run-file response.\n\nBody:\n  { chain_id: string, approved: boolean }\n\nResponse (approved):\n  { success: true, approved: true, agent, output, chains, pending_chains, duration_ms }\n\nResponse (rejected):\n  { success: true, approved: false, message: \"Chain rejected\" }\n\nNote: chain_id is one-time use — consumed on first call (approved or rejected)."
-      }
+        "description": "Approve, skip, or abort a paused manual skill.\n\n  approved: true   — run the skill and continue\n  approved: false  — skip the skill and continue\n  abort: true      — stop the entire pipeline immediately\n\nGet chain_id from pending_skill_chain.chain_id in a /run or /run-file response.\nchain_id is one-time use — consumed on first call.\n\nReturns:\n  { success, approved, output, pending_skill_chain, duration_ms }\n\nIf pending_skill_chain is present, another skill is waiting — call /approve-chain again."
+      },
+      "response": []
     },
     {
-      "name": "Samples",
+      "name": "Skills",
       "description": "One request per sample agent — each sends the full agent YAML to POST /run.",
       "item": [
         {
@@ -180,8 +184,9 @@
                 "run-file"
               ]
             },
-            "description": "Query blockchain data — balances, transactions, and smart contracts\nConnectors: Ethereum (web3)\nPowered by SKILL.md\n\nSteps:\n  • Network Info\n  • Address Lookup\n  • Recent Transactions\n  • Report"
-          }
+            "description": "Query blockchain data â€” balances, transactions, and smart contracts\nConnectors: Ethereum (web3)\nPowered by SKILL.md\n\nSteps:\n  • Network Info\n  • Address Lookup\n  • Recent Transactions\n  • Report"
+          },
+          "response": []
         },
         {
           "name": "Blog to Video Agent",
@@ -215,8 +220,9 @@
                 "run-file"
               ]
             },
-            "description": "Converts a blog post into a teaching video — fetches content, plans slides, generates images and narration, and exports an MP4\nConnectors: Blog (restApi), OpenAI (restApi), Canva (restApi)\nPowered by SKILL.md\n\nSteps:\n  • Fetch Blog Content\n  • Generate Video Script\n  • Generate Voiceover\n  • Create Slide Visuals\n  • Export Slides\n  • Assemble Video\n  • Report"
-          }
+            "description": "Converts a blog post into a teaching video â€” fetches content, plans slides, generates images and narration, and exports an MP4\nConnectors: Blog (restApi), OpenAI (restApi), Canva (restApi)\nPowered by SKILL.md\n\nSteps:\n  • Fetch Blog Content\n  • Generate Video Script\n  • Generate Voiceover\n  • Create Slide Visuals\n  • Export Slides\n  • Assemble Video\n  • Report"
+          },
+          "response": []
         },
         {
           "name": "Drive Manager",
@@ -251,7 +257,8 @@
               ]
             },
             "description": "Read, write, and organize files in Google Drive\nConnectors: My Google Drive (google-drive)\nPowered by SKILL.md\n\nSteps:\n  • List Files\n  • Identify Unorganized Files\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Directory Agent",
@@ -286,7 +293,8 @@
               ]
             },
             "description": "Search and manage users in LDAP or Active Directory\nConnectors: Active Directory (ldap)\nPowered by SKILL.md\n\nSteps:\n  • List Users\n  • List Groups\n  • Org Structure Report\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Email Assistant",
@@ -321,7 +329,8 @@
               ]
             },
             "description": "Summarize inbox and send a follow-up email\nConnectors: My Email (gmail-rest)\nPowered by SKILL.md\n\nSteps:\n  • Read Inbox\n  • Draft and Send Reply\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "File Storage Agent",
@@ -356,7 +365,8 @@
               ]
             },
             "description": "Upload, list, download, and manage files in S3-compatible storage\nConnectors: My S3 Bucket (s3)\nPowered by SKILL.md\n\nSteps:\n  • List Bucket Contents\n  • Analyze Storage\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "GraphQL Agent",
@@ -391,7 +401,8 @@
               ]
             },
             "description": "Run GraphQL queries and mutations\nConnectors: My GraphQL API (graphql)\nPowered by SKILL.md\n\nSteps:\n  • Introspect Schema\n  • Execute Operation\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Hello World",
@@ -425,8 +436,9 @@
                 "run-file"
               ]
             },
-            "description": "The simplest possible OE Runtime agent — no connectors, no params, just an LLM response\nPowered by SKILL.md\n\nSteps:\n  • Greet"
-          }
+            "description": "The simplest possible OE Runtime agent â€” no connectors, no params, just an LLM response\nPowered by SKILL.md\n\nSteps:\n  • Greet"
+          },
+          "response": []
         },
         {
           "name": "Image Creator",
@@ -461,7 +473,8 @@
               ]
             },
             "description": "Generate images from text descriptions using AI\nConnectors: OpenAI Image (openai-image)\nPowered by SKILL.md\n\nSteps:\n  • Plan the Prompt\n  • Generate Image\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "IoT Agent",
@@ -496,7 +509,8 @@
               ]
             },
             "description": "Publish commands and read sensor data via MQTT\nConnectors: MQTT Broker (mqtt)\nPowered by SKILL.md\n\nSteps:\n  • Subscribe to Sensor Topics\n  • Analyze Readings\n  • Publish Commands\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Local Script Runner",
@@ -531,7 +545,8 @@
               ]
             },
             "description": "Run Python, Node.js, and shell commands directly on this machine\nConnectors: Local Shell (shell)\nPowered by SKILL.md\n\nSteps:\n  • System Inventory\n  • Run a Test Script\n  • Environment Check\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Queue Publisher",
@@ -566,7 +581,8 @@
               ]
             },
             "description": "Publish messages to Kafka topics and verify delivery\nConnectors: My Kafka (kafka)\nPowered by SKILL.md\n\nSteps:\n  • List Topics\n  • Publish Messages\n  • Consume Messages\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Music Creator",
@@ -601,7 +617,8 @@
               ]
             },
             "description": "Generate original music tracks from text descriptions\nConnectors: Suno (suno)\nPowered by SKILL.md\n\nSteps:\n  • Design Music Prompt\n  • Generate Track\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "NoSQL Data Agent",
@@ -636,7 +653,8 @@
               ]
             },
             "description": "Read and write MongoDB documents\nConnectors: My MongoDB (mongodb)\nPowered by SKILL.md\n\nSteps:\n  • Query Collection\n  • Analyze Documents\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Document Reader",
@@ -671,7 +689,8 @@
               ]
             },
             "description": "Extract and analyze text from images using OCR\nConnectors: Azure Vision (azure-vision)\nPowered by SKILL.md\n\nSteps:\n  • Analyze a Document Image\n  • Poll for Results\n  • Structure the Data\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Chain Starter",
@@ -689,7 +708,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"yaml\": \"name: Chain Starter\\ndescription: Primary agent that chains to a follow-up (auto) and a review step (manual approval)\\ninstructions: You are a helpful assistant. Complete your task clearly and concisely.\\nsteps:\\n  - name: Main Task\\n    content: |\\n      Write a short 3-sentence summary about the benefits of AI agents in enterprise workflows.\\n\\nchains:\\n  - next_agent: ./chain-followup.yaml\\n    trigger_type: auto\\n\\n  - next_agent: ./chain-manual.yaml\\n    trigger_type: manual\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/oe-chain-project-1/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -697,238 +716,89 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/run",
+              "raw": "{{base_url}}/run-file",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "run"
+                "run-file"
               ]
             },
-            "description": "Primary agent that chains to a follow-up (auto) and a review step (manual approval)"
-          }
+            "description": "Demonstrates the OE skills pipeline — auto and manual skills in sequence\nPowered by SKILL.md"
+          },
+          "response": []
         },
         {
           "name": "My AI Project",
-          "description": "A multi-agent project accessible from Telegram, Slack, HTTP, and MCP",
-          "item": [
-            {
-              "name": "hello",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{api_key}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"yaml\": \"name: Hello World\\ndescription: Greet the user and share a fun fact about today in history\\ninstructions: You are a helpful assistant.\\nsteps:\\n  - name: Greet\\n    content: |\\n      Say hello, mention today's date, and share one fun fact about today in history.\\n      Keep it brief and friendly.\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/run",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "run"
-                  ]
-                },
-                "description": "Greet and share a fun fact"
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/oe-chain-project-2/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
               }
             },
-            {
-              "name": "summary",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{api_key}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"yaml\": \"name: summary\\ndescription: Summarise AI Trends in 2026 in 3 clear bullet points\\ninstructions: You are a concise summariser. Always respond with exactly 3 bullet points.\\nsteps:\\n  - name: Summarise\\n    content: |\\n      Summarise AI Trends in 2026 in exactly 3 bullet points.\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/run",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "run"
-                  ]
-                },
-                "description": "Summarise AI Trends in 2026 in 3 bullet points"
-              }
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
             },
-            {
-              "name": "chain-demo",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{api_key}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"yaml\": \"name: Chain Demo\\ndescription: Demonstrates auto chains (fire immediately) and manual chains (require approval)\\ninstructions: You are a helpful assistant.\\nsteps:\\n  - name: Main Task\\n    content: |\\n      Write a 2-sentence overview of how AI agents are changing enterprise software.\\n\\nchains:\\n  - next_agent: ./chain-followup.yaml\\n    trigger_type: auto\\n\\n  - next_agent: ./chain-manual.yaml\\n    trigger_type: manual\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/run",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "run"
-                  ]
-                },
-                "description": "Demo agent with auto and manual chains"
-              }
-            },
-            {
-              "name": "chat (default)",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{api_key}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"yaml\": \"name: Chat Bot\\ndescription: Default conversational agent — handles any plain message from Telegram, Slack, or HTTP\\ninstructions: |\\n  You are a helpful, concise AI assistant.\\n  Respond directly to the user's message. Keep replies under 300 words.\\n  Do not use heavy markdown formatting — plain text works best in chat.\\nparams:\\n  - name: message\\n    description: The incoming message from the user\\n  - name: user\\n    description: The user's name or username\\nsteps:\\n  - name: Reply\\n    content: |\\n      {{user}} says: {{message}}\\n\\n      Write a helpful, friendly reply.\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/run",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "run"
-                  ]
-                },
-                "description": "Conversational assistant — default for all messages"
-              }
-            }
-          ]
+            "description": "Multi-agent project — hello, summary, chain demo pipeline, and chat. All skills manual so you pick what runs.\nPowered by SKILL.md"
+          },
+          "response": []
         },
         {
           "name": "Telegram Bot",
-          "description": "Conversational AI bot accessible from Telegram",
-          "item": [
-            {
-              "name": "chat (default)",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{api_key}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"yaml\": \"name: Telegram Webhook Bot\\ndescription: Conversational AI bot that responds to Telegram messages via webhook\\ninstructions: |\\n  You are a helpful AI assistant responding to messages in a Telegram chat.\\n  Be concise, friendly, and clear. Keep replies under 500 words.\\n  Do not use triple backticks — they don't render well in Telegram.\\nparams:\\n  - name: message\\n    description: The incoming message text from the user\\n  - name: user\\n    description: The user's first name or username\\nsteps:\\n  - name: Reply\\n    content: |\\n      {{user}} says: {{message}}\\n\\n      Write a helpful, friendly reply. Be direct — no preamble.\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/run",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "run"
-                  ]
-                },
-                "description": "Conversational assistant — default for all messages"
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"D:/Open-Enthrium/app/server/cli/skills/oe-telegram-project/agent.yaml\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
               }
             },
-            {
-              "name": "notifier",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{api_key}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"yaml\": \"name: Telegram Notifier\\ndescription: Read recent Telegram messages and send a summary notification\\ninstructions: |\\n  You are a Telegram bot agent. Read recent updates from the bot and send notification messages.\\n  Always confirm the bot is connected before reading messages.\\n  Complete all steps fully before writing your report.\\nsteps:\\n  - name: Verify Bot Connection\\n    content: |\\n      Call the Telegram connector:\\n      GET /getMe\\n      Note the bot username, id, and display name to confirm the connection is working.\\n\\n  - name: Read Recent Updates\\n    content: |\\n      Call the Telegram connector:\\n      GET /getUpdates with params: { \\\"limit\\\": \\\"10\\\", \\\"allowed_updates\\\": \\\"message\\\" }\\n      For each message note: chat_id, from username, message text, and date.\\n      Remember the chat_id from the most recent message — you will use it to send the reply.\\n      If no updates are found, note that the bot has no recent messages and skip the next step.\\n\\n  - name: Send Summary Notification\\n    content: |\\n      Compose a brief summary of the recent messages.\\n      Use the chat_id from the most recent update (from Step 2).\\n      Send it via the Telegram connector:\\n      POST /sendMessage with body:\\n      {\\n        \\\"chat_id\\\": <chat_id from Step 2>,\\n        \\\"text\\\": \\\"<your summary message>\\\",\\n        \\\"parse_mode\\\": \\\"Markdown\\\"\\n      }\\n\\n  - name: Report\\n    content: |\\n      Summarize what was done:\\n      - Bot name and username confirmed\\n      - Number of recent messages read\\n      - Summary of message content\\n      - Notification sent to chat_id (confirm with message_id returned)\\nconnectors:\\n  - connection_name: My Telegram Bot\\n    connection_type: telegram\\n\",\n  \"params\": {},\n  \"input\": \"run\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/run",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "run"
-                  ]
-                },
-                "description": "Read recent Telegram messages and send a summary notification"
-              }
-            }
-          ]
+            "url": {
+              "raw": "{{base_url}}/run-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "run-file"
+              ]
+            },
+            "description": "Conversational AI bot accessible from Telegram — pick the skill to run.\nPowered by SKILL.md"
+          },
+          "response": []
         },
         {
           "name": "GitHub Assistant",
@@ -963,7 +833,8 @@
               ]
             },
             "description": "Summarize open issues and PRs in a repository\nConnectors: GitHub (github)\nPowered by SKILL.md\n\nSteps:\n  • Repository Overview\n  • Issue Triage\n  • Create a Summary Issue\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "API Caller",
@@ -998,7 +869,8 @@
               ]
             },
             "description": "Make HTTP requests to a REST API and summarize responses\nConnectors: Target API (http)\nPowered by SKILL.md\n\nSteps:\n  • Probe API\n  • Fetch Detail and Create Record\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Sales Pipeline Demo",
@@ -1033,7 +905,8 @@
               ]
             },
             "description": "Demonstrates skills and plugins — runs local SKILL.md skills and a remote plugin\nPowered by SKILL.md"
-          }
+          },
+          "response": []
         },
         {
           "name": "Text to Speech Agent",
@@ -1068,7 +941,8 @@
               ]
             },
             "description": "Convert text to natural-sounding speech audio\nConnectors: ElevenLabs (elevenlabs)\nPowered by SKILL.md\n\nSteps:\n  • Prepare Content\n  • Select Voice\n  • Generate Audio\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Database Analyst",
@@ -1103,7 +977,8 @@
               ]
             },
             "description": "Query a SQL database and summarize results in plain English\nConnectors: My Database (postgresql)\nPowered by SKILL.md\n\nSteps:\n  • Explore Schema\n  • Analyze Key Data\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Server Admin Agent",
@@ -1138,7 +1013,8 @@
               ]
             },
             "description": "Run a health check on a remote Linux server via SSH\nConnectors: My Server (ssh)\nPowered by SKILL.md\n\nSteps:\n  • Gather System Info\n  • Check Services and Security\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Slack Notifier",
@@ -1173,7 +1049,8 @@
               ]
             },
             "description": "Summarize channel activity and post a daily digest\nConnectors: My Slack (slack)\nPowered by SKILL.md\n\nSteps:\n  • Read Channel Activity\n  • Post Daily Digest\n  • Report"
-          }
+          },
+          "response": []
         },
         {
           "name": "Video Creator Agent",
@@ -1207,8 +1084,9 @@
                 "run-file"
               ]
             },
-            "description": "Generates a short teaching video on any topic — script, images, narration, and MP4 via Canva\nConnectors: OpenAI (restApi), Canva (restApi)\nPowered by SKILL.md\n\nSteps:\n  • Write the Script\n  • Generate Voiceover\n  • Create Visual Slides\n  • Export Slides\n  • Assemble Video\n  • Report"
-          }
+            "description": "Generates a short teaching video on any topic â€” script, images, narration, and MP4 via Canva\nConnectors: OpenAI (restApi), Canva (restApi)\nPowered by SKILL.md\n\nSteps:\n  • Write the Script\n  • Generate Voiceover\n  • Create Visual Slides\n  • Export Slides\n  • Assemble Video\n  • Report"
+          },
+          "response": []
         },
         {
           "name": "Research Agent",
@@ -1243,7 +1121,8 @@
               ]
             },
             "description": "Search the web and summarize findings with citations\nConnectors: Perplexity (perplexity-search)\nPowered by SKILL.md\n\nSteps:\n  • Search\n  • Synthesize Findings\n  • Report"
-          }
+          },
+          "response": []
         }
       ]
     }

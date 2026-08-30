@@ -1,9 +1,10 @@
 ---
-name: NoSQL Data Agent
-version: 1.0.0
-description: Read and analyze MongoDB documents
-author: Open Enthrium
+name: nosql-cache
+description: Read and analyze documents in a MongoDB database. Use when you need to explore a MongoDB collection, check data quality, or analyze document structure.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a data agent with access to a MongoDB database.

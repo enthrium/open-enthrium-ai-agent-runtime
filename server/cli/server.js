@@ -108,113 +108,119 @@ function parseSkillMdServer(content) {
   return { name: front.name, description: front.description, instructions: preamble, steps: parsedSteps };
 }
 
-async function runSkillsServer(skills, parentOutput, agentFile, config, params, depth) {
+async function runSkillsServer(skills, parentOutput, agentFile, config, depth) {
   const MAX_DEPTH = 5;
-  if (!skills?.length || depth >= MAX_DEPTH) return parentOutput;
-  let lastOutput = parentOutput;
-  for (const skill of skills) {
-    const skillPath = skill.path;
+  if (!skills?.length || depth >= MAX_DEPTH) return { output: parentOutput || "", pending_skill_chain: null };
+
+  let lastOutput = parentOutput || "";
+
+  for (let i = 0; i < skills.length; i++) {
+    const skill       = skills[i];
+    const skillPath   = skill.path;
+    const triggerType = (skill.trigger_type || skill.triggerType || "auto").toLowerCase();
     if (!skillPath) continue;
-    const resolved = skillPath.toLowerCase().endsWith(".md") ? skillPath : path.join(skillPath, "SKILL.md");
-    const fullPath = agentFile ? path.join(path.dirname(agentFile), resolved) : resolved;
+
+    const label = path.basename(skillPath);
+
+    // Manual skill — pause and register pending
+    if (triggerType === "manual") {
+      const chainId = makeChainId();
+      pendingChains.set(chainId, {
+        remainingSkills: skills.slice(i), // this skill + everything after
+        lastOutput,
+        agentFile,
+        config,
+        depth,
+      });
+      return {
+        output: lastOutput,
+        pending_skill_chain: {
+          chain_id:   chainId,
+          skill_name: label,
+        },
+      };
+    }
+
+    // Auto skill — load SKILL.md and run it
+    const resolved = skillPath.toLowerCase().endsWith(".md")
+      ? skillPath
+      : path.join(skillPath, "SKILL.md");
+    const fullPath = agentFile
+      ? path.join(path.dirname(agentFile), resolved)
+      : resolved;
+
     if (!fs.existsSync(fullPath)) { console.warn(`  ⚠  SKILL.md not found: ${fullPath}`); continue; }
-    const content  = fs.readFileSync(fullPath, "utf8");
+
+    const content   = fs.readFileSync(fullPath, "utf8");
     const skillSpec = parseSkillMdServer(content);
     if (!skillSpec) { console.warn(`  ⚠  Invalid SKILL.md: ${fullPath}`); continue; }
-    // Merge parent agent connectors with skill's own if any
-    const skillYaml    = yaml.load(fs.readFileSync(agentFile, "utf8")) || {};
-    const connectors   = prepareConnectors(skillYaml.connectors, config.connectors);
+
+    // Skill-level connector scoping: connectors:[] = zero tools, absent = all
+    const parentYaml    = agentFile ? (yaml.load(fs.readFileSync(agentFile, "utf8")) || {}) : {};
+    const allConnectors = prepareConnectors(parentYaml.connectors, config.connectors);
+    const connectorNames = skill.connectors; // string[] | undefined from orchestrator agent.yaml
+    const connectors = Array.isArray(connectorNames)
+      ? allConnectors.filter(c => connectorNames.includes(c.connection_name || c.name))
+      : allConnectors;
+
     const contextInput = lastOutput
       ? `Context from previous step:\n\n${lastOutput}\n\nNow execute your task.`
       : "Execute your task as described.";
+
     const agentSpec = {
-      name:         skillSpec.name || "Skill",
-      instructions: skillSpec.instructions || "",
-      steps:        skillSpec.steps,
+      systemPrompt: skillSpec.instructions || "",
+      workflow:     skillSpec.steps        || [],
+      params:       [],
+      paramValues:  {},
+      maxRounds:    25,
+      input:        contextInput,
     };
-    const { output } = await engine.run(agentSpec, config.llm, connectors, {
-      onToolCall:   () => {},
-      onToolResult: () => {},
-      onError:      (err) => { throw err; },
-    });
-    lastOutput = output;
+
+    try {
+      const { output } = await engine.run(agentSpec, config.llm, connectors, {
+        onToolCall:   (name) => console.log(`  🔧  [skill:${label}] ${name}`),
+        onToolResult: () => {},
+        onError:      (err) => { throw err; },
+      });
+      lastOutput = output;
+    } catch (err) {
+      console.error(`  ❌  Skill ${label} failed: ${err.message}`);
+      lastOutput = `Skill ${label} failed: ${err.message}`;
+    }
   }
-  return lastOutput;
+
+  return { output: lastOutput, pending_skill_chain: null };
 }
 
 async function runAgentServer(agentFile, agentYaml, config, input, params, depth = 0) {
   const connectors = prepareConnectors(agentYaml.connectors, config.connectors);
   const agentSpec  = buildAgentSpec(agentYaml, params, input);
 
-  const hasSkillsOnly = agentYaml.skills?.length && !agentYaml.steps?.length;
+  // Skip LLM call when no instructions or steps defined — go straight to skills/chains
+  const hasWork = (agentSpec.systemPrompt || "").trim() || agentSpec.workflow?.length;
+  let output = typeof input === "string" ? input : "";
 
-  let output;
-  if (hasSkillsOnly) {
-    // Skip the empty main agent call — go straight to skills
-    output = await runSkillsServer(agentYaml.skills, "", agentFile, config, params, depth + 1);
-  } else {
-    const result = await engine.run(agentSpec, config.llm, connectors, {
+  if (hasWork) {
+    const llmResult = await engine.run(agentSpec, config.llm, connectors, {
       onToolCall:   () => {},
       onToolResult: () => {},
       onError:      (err) => { throw err; },
     });
-    output = result.output;
-    // Run skills after main agent if both present
-    if (agentYaml.skills?.length) {
-      output = await runSkillsServer(agentYaml.skills, output, agentFile, config, params, depth + 1);
-    }
+    output = llmResult.output;
   }
 
   const result = {
-    agent:          agentYaml.name || (agentFile ? path.basename(agentFile) : "inline"),
+    agent:              agentYaml.name || (agentFile ? path.basename(agentFile) : "inline"),
     output,
-    chains:         [],
-    pending_chains: [],
+    pending_skill_chain: null,
   };
 
-  if (!agentYaml.chains?.length || depth >= MAX_DEPTH) return result;
-
-  for (const chain of agentYaml.chains) {
-    const nextAgent   = chain.next_agent   || chain.nextAgent;
-    const triggerType = chain.trigger_type || chain.triggerType || "auto";
-
-    if (!nextAgent) continue;
-
-    const nextPath = agentFile
-      ? path.resolve(path.dirname(path.resolve(agentFile)), nextAgent)
-      : null;
-
-    if (!nextPath || !fs.existsSync(nextPath)) {
-      result.chains.push({ agent: nextAgent, error: "chain agent file not found: " + (nextPath || nextAgent) });
-      continue;
-    }
-
-    const contextInput = `Context from previous agent:\n\n${output}\n\nNow execute your task.`;
-
-    if (triggerType === "manual") {
-      const chainId = makeChainId();
-      pendingChains.set(chainId, {
-        nextPath,
-        contextOutput: output,
-        params,
-        depth: depth + 1,
-      });
-      result.pending_chains.push({
-        chain_id:       chainId,
-        next_agent:     nextAgent,
-        output_preview: output.slice(0, 300),
-      });
-    } else {
-      let nextYaml;
-      try { nextYaml = yaml.load(fs.readFileSync(nextPath, "utf8")); }
-      catch (e) { result.chains.push({ agent: nextAgent, error: "Failed to load YAML: " + e.message }); continue; }
-
-      try {
-        const chainResult = await runAgentServer(nextPath, nextYaml, config, contextInput, params, depth + 1);
-        result.chains.push(chainResult);
-      } catch (err) {
-        result.chains.push({ agent: nextYaml.name || path.basename(nextPath), error: err.message });
-      }
+  // Run skills pipeline — supports trigger_type: manual + connector scoping
+  if (agentYaml.skills?.length) {
+    const skillResult = await runSkillsServer(agentYaml.skills, output, agentFile, config, depth + 1);
+    result.output = skillResult.output;
+    if (skillResult.pending_skill_chain) {
+      result.pending_skill_chain = skillResult.pending_skill_chain;
     }
   }
 
@@ -278,9 +284,13 @@ function parseCommand(text) {
   if (bareLower === "approve" || lower === "yes" || lower === "y")
     return { action: "approve" };
 
-  // Cancel shortcuts
+  // Cancel shortcuts (skip this skill, continue to next)
   if (bareLower === "cancel" || lower === "no" || lower === "n")
     return { action: "cancel" };
+
+  // Abort — stop the entire pipeline
+  if (bareLower === "abort" || bareLower === "stop")
+    return { action: "abort" };
 
   // Unknown slash command (e.g. Slack native slash — starts with / but not a known cmd)
   if (t.startsWith("/")) return { action: "unknown", command: t };
@@ -298,8 +308,9 @@ function formatHelp() {
     "run <name>     Run agent by name",
     "run <path>     Run agent by file path",
     "agents         List available agents",
-    "approve / yes  Approve pending chain",
-    "cancel / no    Cancel pending chain",
+    "approve / yes  Approve pending skill or chain",
+    "cancel / no    Skip pending skill (continues to next)",
+    "abort / stop   Stop the entire pipeline",
     "status         Health check",
     "projects       List linked projects",
     "help           Show this message",
@@ -377,52 +388,49 @@ async function handleWebhookMessage({ platform, config, project, cwd, chatId, us
     return "⏱ Too many messages. Please slow down.";
   }
 
-  // ── check for pending chain approval ────────────────────────────────────────
+  // ── check for pending skill approval ────────────────────────────────────────
   const pendingApproval = pendingApprovals.get(chatKey);
 
   if (pendingApproval) {
-    const cmd = parseCommand(text);
+    const cmd     = parseCommand(text);
+    const chainId = pendingApproval.chain_id;
+    const pending = pendingChains.get(chainId);
 
-    if (cmd.action === "approve") {
+    if (cmd.action === "abort") {
+      pendingChains.delete(chainId);
       pendingApprovals.delete(chatKey);
-
-      const pending = pendingChains.get(pendingApproval.chain_id);
-      if (!pending) return "Chain expired or already used.";
-      pendingChains.delete(pendingApproval.chain_id);
-
-      let nextYaml;
-      try { nextYaml = yaml.load(fs.readFileSync(pending.nextPath, "utf8")); }
-      catch (e) { return `❌ Failed to load chain agent: ${e.message}`; }
-
-      const contextInput = `Context from previous agent:\n\n${pending.contextOutput}\n\nNow execute your task.`;
-
-      const result = await runAgentServer(
-        pending.nextPath, nextYaml, config, contextInput, pending.params, pending.depth
-      );
-
-      // Further pending chains?
-      if (result.pending_chains?.length) {
-        const pc = result.pending_chains[0];
-        pendingApprovals.set(chatKey, { chain_id: pc.chain_id, next_agent: pc.next_agent });
-        return `${result.output}\n\n⏸ *Next chain:* ${pc.next_agent}\nReply YES to approve or NO to cancel.`;
-      }
-
-      return result.output;
-
-    } else if (cmd.action === "cancel") {
-      pendingChains.delete(pendingApproval.chain_id);
-      pendingApprovals.delete(chatKey);
-      return "⏹ Chain cancelled.";
-
-    } else {
-      return `⏸ *Pending chain:* ${pendingApproval.next_agent}\nReply YES to approve or NO to cancel.`;
+      return "🛑 Pipeline aborted.";
     }
+
+    if (cmd.action === "approve" || cmd.action === "cancel") {
+      pendingApprovals.delete(chatKey);
+      if (!pending) return "Approval expired or already used.";
+      pendingChains.delete(chainId);
+
+      const approved  = cmd.action === "approve";
+      const skills    = approved
+        ? (copy => { copy[0] = { ...copy[0], trigger_type: "auto" }; return copy; })([...pending.remainingSkills])
+        : pending.remainingSkills.slice(1);
+
+      if (!skills.length) return approved ? "✅ Done." : "⏭ Skipped. All done.";
+
+      const skillResult = await runSkillsServer(skills, pending.lastOutput, pending.agentFile, pending.config, pending.depth);
+      if (skillResult.pending_skill_chain) {
+        const ps = skillResult.pending_skill_chain;
+        pendingApprovals.set(chatKey, { chain_id: ps.chain_id, skill_name: ps.skill_name });
+        const prefix = approved ? skillResult.output + "\n\n" : "⏭ Skipped.\n\n";
+        return `${prefix}⏸ *Next skill:* ${ps.skill_name}\nReply YES to approve, NO to skip, or ABORT to stop.`;
+      }
+      return approved ? skillResult.output : `⏭ Skipped.\n\n${skillResult.output}`;
+    }
+
+    return `⏸ *Pending skill:* ${pendingApproval.skill_name}\nReply YES to approve, NO to skip, or ABORT to stop.`;
   }
 
   // ── parse command ────────────────────────────────────────────────────────────
   const cmd = parseCommand(text);
 
-  // ── helper: run an agent file and handle pending chains ───────────────────
+  // ── helper: run an agent file and handle pending skills ───────────────────
   async function runAndReply(agentFile, input = null, params = {}) {
     let agentYaml;
     try { agentYaml = yaml.load(fs.readFileSync(agentFile, "utf8")); }
@@ -433,10 +441,10 @@ async function handleWebhookMessage({ platform, config, project, cwd, chatId, us
     const agentParams = { message: text, chat_id: String(chatId), user, ...params };
     const result      = await runAgentServer(agentFile, agentYaml, config, input, agentParams, 0);
 
-    if (result.pending_chains?.length) {
-      const pc = result.pending_chains[0];
-      pendingApprovals.set(chatKey, { chain_id: pc.chain_id, next_agent: pc.next_agent });
-      return `${result.output}\n\n⏸ *Next chain:* ${pc.next_agent}\nReply YES to approve or NO to cancel.`;
+    if (result.pending_skill_chain) {
+      const ps = result.pending_skill_chain;
+      pendingApprovals.set(chatKey, { chain_id: ps.chain_id, skill_name: ps.skill_name });
+      return `${result.output}\n\n⏸ *Next skill:* ${ps.skill_name}\nReply YES to approve, NO to skip, or ABORT to stop.`;
     }
 
     return result.output;
@@ -930,7 +938,7 @@ exports.start = function start(config) {
 
   // ── POST /approve-chain ──────────────────────────────────────────────────────
   app.post("/approve-chain", async (req, res) => {
-    const { chain_id, approved = true } = req.body || {};
+    const { chain_id, approved = true, abort = false } = req.body || {};
     if (!chain_id) return res.status(400).json({ error: "chain_id is required" });
 
     const pending = pendingChains.get(chain_id);
@@ -938,22 +946,39 @@ exports.start = function start(config) {
 
     pendingChains.delete(chain_id);
 
-    if (!approved) return res.json({ success: true, approved: false, message: "Chain rejected" });
+    // abort:true — stop the entire pipeline immediately
+    if (abort) {
+      return res.json({ success: true, aborted: true, message: "Pipeline aborted" });
+    }
 
-    const { nextPath, contextOutput, params, depth } = pending;
-
-    let agentYaml;
-    try { agentYaml = yaml.load(fs.readFileSync(nextPath, "utf8")); }
-    catch (e) { return res.status(500).json({ success: false, error: "Failed to load chain agent: " + e.message }); }
-
-    const contextInput = `Context from previous agent:\n\n${contextOutput}\n\nNow execute your task.`;
     const t0 = Date.now();
+    const { remainingSkills, lastOutput, agentFile, config: skillConfig, depth } = pending;
+
+    // approved:false — skip this skill, continue with the rest
+    const skills = approved
+      ? (skillsCopy => { skillsCopy[0] = { ...skillsCopy[0], trigger_type: "auto" }; return skillsCopy; })([...remainingSkills])
+      : remainingSkills.slice(1);
+
+    if (!skills.length) {
+      return res.json({ success: true, approved, output: lastOutput, pending_skill_chain: null, duration_ms: Date.now() - t0 });
+    }
 
     try {
-      const result = await runAgentServer(nextPath, agentYaml, config, contextInput, params, depth);
-      res.json({ success: true, approved: true, ...result, duration_ms: Date.now() - t0 });
+      const skillResult = await runSkillsServer(skills, lastOutput, agentFile, skillConfig, depth);
+      // When skipping (approved:false), only surface output if a new auto-skill actually ran.
+      // If nothing executed, output is null — don't echo back the previous skill's text.
+      const outputToReturn = approved
+        ? skillResult.output
+        : (skillResult.output !== lastOutput ? skillResult.output : null);
+      return res.json({
+        success:             true,
+        approved,
+        output:              outputToReturn,
+        pending_skill_chain: skillResult.pending_skill_chain || null,
+        duration_ms:         Date.now() - t0,
+      });
     } catch (err) {
-      res.status(500).json({ success: false, error: err.message, duration_ms: Date.now() - t0 });
+      return res.status(500).json({ success: false, error: err.message, duration_ms: Date.now() - t0 });
     }
   });
 
@@ -970,7 +995,7 @@ exports.start = function start(config) {
     console.log(`  POST /command         — universal command endpoint`);
     console.log(`  POST /run             — run agent from inline YAML`);
     console.log(`  POST /run-file        — run agent from YAML file on disk`);
-    console.log(`  POST /approve-chain   — approve or reject a pending manual chain`);
+    console.log(`  POST /approve-chain   — approve, skip, or abort a pending skill`);
 
     if (mountedRoutes.length) {
       for (const { type, path: wPath } of mountedRoutes) {

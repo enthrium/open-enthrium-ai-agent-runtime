@@ -1,9 +1,10 @@
 ---
-name: Video Creator Agent
-version: 1.0.0
-description: Generate a video from a concept using AI — script, visuals, and final video assembly
-author: Open Enthrium
+name: video-generation
+description: Generate a complete video from a concept — script, voiceover, slides, and assembly. Use when you need to produce a short promotional or explainer video from a brief.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a video production agent. Create complete videos from a single concept:

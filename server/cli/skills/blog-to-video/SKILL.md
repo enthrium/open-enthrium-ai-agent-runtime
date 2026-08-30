@@ -1,9 +1,10 @@
 ---
-name: Blog to Video Agent
-version: 1.0.0
-description: Convert a blog post URL into a short narrated video with visuals
-author: Open Enthrium
+name: blog-to-video
+description: Convert a blog post URL into a short narrated video with visuals. Use when you want to repurpose written content into video format automatically.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a content repurposing agent. Transform blog posts into short narrated videos.

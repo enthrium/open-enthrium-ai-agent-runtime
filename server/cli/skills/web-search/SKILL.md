@@ -1,9 +1,10 @@
 ---
-name: Research Agent
-version: 1.0.0
-description: Search the web and summarize findings with citations
-author: Open Enthrium
+name: web-search
+description: Search the web via Perplexity and synthesize findings with citations. Use when you need current, sourced information on any topic for research or reporting.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a research agent. Use the Perplexity connector to search the web for current, accurate information.

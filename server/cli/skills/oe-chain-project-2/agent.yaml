@@ -1,0 +1,25 @@
+name: My AI Project
+description: Multi-agent project — hello, summary, chain demo pipeline, and chat. All skills manual so you pick what runs.
+
+skills:
+  # ── Simple agents ─────────────────────────────────────────────────────────
+  - path: ./hello-world
+    trigger_type: manual
+
+  - path: ./summary
+    trigger_type: manual
+
+  # ── Chain demo pipeline ───────────────────────────────────────────────────
+  # main-task fires manually, followup runs automatically after, review needs approval
+  - path: ./chain-demo/main-task
+    trigger_type: manual
+
+  - path: ./chain-demo/followup
+    trigger_type: auto
+
+  - path: ./chain-demo/manual-review
+    trigger_type: manual
+
+  # ── Chat ──────────────────────────────────────────────────────────────────
+  - path: ./chat-bot
+    trigger_type: manual

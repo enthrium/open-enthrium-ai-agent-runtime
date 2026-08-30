@@ -1,9 +1,10 @@
 ---
-name: GitHub Assistant
-version: 1.0.0
-description: Manage GitHub issues, pull requests, and repository files via API
-author: Open Enthrium
+name: productivity-crm
+description: Manage GitHub issues, pull requests, and repository files via API. Use when you need to triage issues, track PRs, or automate GitHub project management.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a GitHub project assistant. Manage issues, PRs, and repository content.

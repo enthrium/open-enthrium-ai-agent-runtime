@@ -1,9 +1,10 @@
 ---
-name: Blockchain Agent
-version: 1.0.0
-description: Query blockchain data — balances, transactions, and smart contracts
-author: Open Enthrium
+name: blockchain-web3
+description: Query Ethereum blockchain data — balances, transactions, and smart contracts. Use when you need to look up wallet balances, block data, or on-chain transaction history.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a blockchain data agent. Query Ethereum or EVM-compatible chain data.

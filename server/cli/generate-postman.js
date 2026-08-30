@@ -29,7 +29,7 @@ function jsonBody(obj) {
   };
 }
 
-function postRequest(name, urlPath, body, description) {
+function postRequest(name, urlPath, body, description, responses = []) {
   return {
     name,
     request: {
@@ -46,10 +46,11 @@ function postRequest(name, urlPath, body, description) {
       },
       description,
     },
+    response: responses,
   };
 }
 
-function getRequest(name, urlPath, description) {
+function getRequest(name, urlPath, description, responses = []) {
   return {
     name,
     request: {
@@ -62,6 +63,7 @@ function getRequest(name, urlPath, description) {
       },
       description,
     },
+    response: responses,
   };
 }
 
@@ -82,7 +84,7 @@ const coreItems = [
       params: {},
       input:  "run",
     },
-    "Run an agent by passing YAML inline.\n\nReturns:\n  { success, agent, output, chains, pending_chains, duration_ms }\n\nNote: chains: with relative next_agent paths require /run-file instead (path resolution needs a base directory)."
+    "Run an agent by passing YAML inline.\n\nReturns:\n  { success, agent, output, pending_skill_chain, duration_ms }\n\n- pending_skill_chain: present when a manual skill is paused awaiting approval\n  { chain_id, skill_name } — use chain_id with POST /approve-chain to continue\n\nNote: skills: with relative SKILL.md paths require /run-file instead."
   ),
 
   postRequest(
@@ -93,14 +95,14 @@ const coreItems = [
       params: {},
       input:  "run",
     },
-    "Run an agent from a YAML file path on the server's disk.\n\nReturns:\n  { success, agent, output, chains, pending_chains, duration_ms }\n\n- chains: array of auto-chain results (nested, recursive)\n- pending_chains: array of manual chains awaiting approval via POST /approve-chain"
+    "Run an agent from a YAML file path on the server's disk.\n\nReturns:\n  { success, agent, output, pending_skill_chain, duration_ms }\n\n- pending_skill_chain: present when a manual skill is paused awaiting approval\n  { chain_id, skill_name } — use chain_id with POST /approve-chain to continue"
   ),
 
   postRequest(
     "Approve Chain",
     "/approve-chain",
-    { chain_id: "PASTE_CHAIN_ID_HERE", approved: true },
-    "Approve or reject a pending manual chain.\n\nGet the chain_id from pending_chains[] in a /run or /run-file response.\n\nBody:\n  { chain_id: string, approved: boolean }\n\nResponse (approved):\n  { success: true, approved: true, agent, output, chains, pending_chains, duration_ms }\n\nResponse (rejected):\n  { success: true, approved: false, message: \"Chain rejected\" }\n\nNote: chain_id is one-time use — consumed on first call (approved or rejected)."
+    { chain_id: "{{chain_id}}", approved: true, abort: false },
+    "Approve, skip, or abort a paused manual skill.\n\n  approved: true   — run the skill and continue\n  approved: false  — skip the skill and continue\n  abort: true      — stop the entire pipeline immediately\n\nGet chain_id from pending_skill_chain.chain_id in a /run or /run-file response.\nchain_id is one-time use — consumed on first call.\n\nReturns:\n  { success, approved, output, pending_skill_chain, duration_ms }\n\nIf pending_skill_chain is present, another skill is waiting — call /approve-chain again."
   ),
 ];
 
@@ -242,7 +244,7 @@ function generate() {
     },
     variable: [
       { key: "base_url", value: "http://localhost:3333", type: "string" },
-      { key: "api_key",  value: "your-api-key",          type: "string" },
+      { key: "api_key",  value: "your-secret-api-key",    type: "string" },
     ],
     item: [...coreItems, samplesFolder],
   };

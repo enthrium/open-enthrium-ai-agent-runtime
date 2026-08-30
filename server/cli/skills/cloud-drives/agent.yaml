@@ -6,5 +6,5 @@ connectors:
     connection_type: google-drive
 
 skills:
-  - path: ./SKILL.md
+  - path: ./
     trigger_type: auto

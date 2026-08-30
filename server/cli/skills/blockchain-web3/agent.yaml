@@ -1,10 +1,10 @@
 name: Blockchain Agent
-description: Query blockchain data — balances, transactions, and smart contracts
+description: Query blockchain data â€” balances, transactions, and smart contracts
 
 connectors:
   - connection_name: Ethereum
     connection_type: web3
 
 skills:
-  - path: ./SKILL.md
+  - path: ./
     trigger_type: auto

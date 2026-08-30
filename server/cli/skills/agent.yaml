@@ -1,70 +1,110 @@
 name: OE Skills Collection
-description: "Open-Enthrium skills collection — 20 ready-to-use SKILL.md agents covering email, databases, messaging, cloud, media, and more. Each skill runs on Claude, Codex, or OE."
-instructions: |
-  You are the Open-Enthrium skills orchestrator.
-  Route user requests to the most relevant skill below.
-  Each skill is self-contained and declares its own connector requirements.
+description: "OE Runtime agent orchestration — run any of 23 pre-built skills from a single entry point. Pick a skill, approve it, and the orchestrator routes it to the right connector automatically. No glue code. No config switching."
+
+# ── Orchestrator SKILL.md (auto) ────────────────────────────────────────────
+# Greets the user, lists available skills, and asks what to run.
+# Each downstream skill is manual so the user confirms before it executes.
 
 skills:
+  # ── No connectors ────────────────────────────────────────────────────────
   - path: ./hello-world
     trigger_type: manual
+    connectors: []
 
+  # ── Communication ────────────────────────────────────────────────────────
   - path: ./email
     trigger_type: manual
-
-  - path: ./sql-databases
-    trigger_type: manual
-
-  - path: ./ssh
-    trigger_type: manual
-
-  - path: ./cloud-drives
-    trigger_type: manual
-
-  - path: ./web-search
-    trigger_type: manual
+    connectors: ["My Email"]
 
   - path: ./team-messaging
     trigger_type: manual
+    connectors: ["My Slack"]
 
-  - path: ./productivity-crm
+  # ── Databases ────────────────────────────────────────────────────────────
+  - path: ./sql-databases
     trigger_type: manual
-
-  - path: ./rest-api
-    trigger_type: manual
-
-  - path: ./image-generation
-    trigger_type: manual
+    connectors: ["My Database"]
 
   - path: ./nosql-cache
     trigger_type: manual
+    connectors: ["My MongoDB"]
 
-  - path: ./telegram
+  # ── Files & Storage ───────────────────────────────────────────────────────
+  - path: ./cloud-drives
     trigger_type: manual
+    connectors: ["My Google Drive"]
 
-  - path: ./ocr-vision
+  - path: ./file-storage
     trigger_type: manual
+    connectors: ["My S3 Bucket"]
+
+  # ── Infrastructure ────────────────────────────────────────────────────────
+  - path: ./ssh
+    trigger_type: manual
+    connectors: ["My Server"]
 
   - path: ./local-exec
     trigger_type: manual
+    connectors: ["Local Shell"]
+
+  # ── APIs & Integration ────────────────────────────────────────────────────
+  - path: ./rest-api
+    trigger_type: manual
+    connectors: ["Target API"]
 
   - path: ./graphql
     trigger_type: manual
+    connectors: ["My GraphQL API"]
 
+  - path: ./productivity-crm
+    trigger_type: manual
+    connectors: ["GitHub"]
+
+  - path: ./web-search
+    trigger_type: manual
+    connectors: ["Perplexity"]
+
+  # ── Messaging & IoT ───────────────────────────────────────────────────────
   - path: ./message-queues
     trigger_type: manual
+    connectors: ["My Kafka"]
 
   - path: ./iot-messaging
     trigger_type: manual
+    connectors: ["MQTT Broker"]
+
+  # ── Media Generation ─────────────────────────────────────────────────────
+  - path: ./image-generation
+    trigger_type: manual
+    connectors: ["OpenAI Image"]
 
   - path: ./music-generation
     trigger_type: manual
+    connectors: ["Suno"]
 
   - path: ./speech-audio
     trigger_type: manual
+    connectors: ["ElevenLabs"]
 
   - path: ./video-generation
     trigger_type: manual
+    connectors: ["OpenAI", "Canva"]
 
+  - path: ./blog-to-video
+    trigger_type: manual
+    connectors: ["Blog", "OpenAI", "Canva"]
+
+  # ── Vision & AI ───────────────────────────────────────────────────────────
+  - path: ./ocr-vision
+    trigger_type: manual
+    connectors: ["Azure Vision"]
+
+  # ── Blockchain ────────────────────────────────────────────────────────────
   - path: ./blockchain-web3
     trigger_type: manual
+    connectors: ["Ethereum"]
+
+  # ── Identity & Directory ─────────────────────────────────────────────────
+  - path: ./directory-identity
+    trigger_type: manual
+    connectors: ["Active Directory"]

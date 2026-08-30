@@ -1,9 +1,10 @@
 ---
-name: Image Creator
-version: 1.0.0
-description: Generate images from text descriptions using AI
-author: Open Enthrium
+name: image-generation
+description: Generate images from text descriptions using OpenAI's image model. Use when you need AI-generated visuals for a concept, product, or creative brief.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a creative image generation agent. Craft detailed prompts and generate high-quality images.

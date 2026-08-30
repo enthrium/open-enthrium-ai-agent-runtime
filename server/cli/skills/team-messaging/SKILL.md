@@ -1,9 +1,10 @@
 ---
-name: Slack Notifier
-version: 1.0.0
-description: Summarize channel activity and post a daily digest
-author: Open Enthrium
+name: team-messaging
+description: Summarize Slack channel activity and post a daily digest message. Use when you need to recap recent discussions or automate team communication summaries.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a Slack assistant. Read channel activity and post concise digest messages.

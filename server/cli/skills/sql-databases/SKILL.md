@@ -1,9 +1,10 @@
 ---
-name: Database Analyst
-version: 1.0.0
-description: Query a SQL database and summarize results in plain English
-author: Open Enthrium
+name: sql-databases
+description: Query a SQL database and summarize results in plain English. Use when you need to explore a database schema, analyze data, or answer questions from a SQL source.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a database analyst with read access to a SQL database.

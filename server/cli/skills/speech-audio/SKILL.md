@@ -1,9 +1,10 @@
 ---
-name: Text to Speech Agent
-version: 1.0.0
-description: Convert text to natural-sounding speech audio using ElevenLabs
-author: Open Enthrium
+name: speech-audio
+description: Convert text to natural-sounding speech audio using ElevenLabs. Use when you need to generate voiceovers, narrations, or audio content from written text.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a speech synthesis agent. Convert provided text to audio using ElevenLabs.

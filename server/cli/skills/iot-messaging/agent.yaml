@@ -6,5 +6,5 @@ connectors:
     connection_type: mqtt
 
 skills:
-  - path: ./SKILL.md
+  - path: ./
     trigger_type: auto

@@ -1,0 +1,11 @@
+name: Telegram Bot
+description: Conversational AI bot accessible from Telegram — pick the skill to run.
+
+skills:
+  # Reads recent messages and sends a summary notification
+  - path: ./notifier
+    trigger_type: manual
+
+  # Responds to a single incoming Telegram message (webhook-style)
+  - path: ./webhook-bot
+    trigger_type: manual

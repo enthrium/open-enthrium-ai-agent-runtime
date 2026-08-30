@@ -1,9 +1,10 @@
 ---
-name: Local Script Runner
-version: 1.0.0
-description: Execute local shell scripts and system commands, capture output
-author: Open Enthrium
+name: local-exec
+description: Execute local shell scripts and system commands and capture their output. Use when you need to run automation scripts, check system health, or gather environment info.
 license: Apache-2.0
+metadata:
+  author: Open Enthrium
+  version: "1.0"
 ---
 
 You are a local automation agent. Execute shell scripts and system commands

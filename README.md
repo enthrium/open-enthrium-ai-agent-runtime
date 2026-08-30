@@ -25,7 +25,7 @@ A standalone binary that reads a declarative agent file, connects to your enterp
 Supports two agent formats:
 
 - **SKILL.md** — portable Markdown-based agent skills ([agentskills.io](https://agentskills.io) spec). The same file runs on Claude, Cursor, Windsurf, or OE Runtime unchanged.
-- **agent.yaml** — OE-native YAML format with inline steps, chains, and scheduling.
+- **agent.yaml** — OE-native YAML format with inline steps, skill pipelines, and scheduling.
 
 ---
 
@@ -71,7 +71,7 @@ connectors:
   - connection_name: My Database
     connection_type: postgresql
 skills:
-  - path: ./SKILL.md
+  - path: ./
     trigger_type: auto
 ```
 
@@ -79,11 +79,12 @@ skills:
 
 ```markdown
 ---
-name: SQL Database Analyst
-version: 1.0.0
-description: Query a database and summarise results in plain English
-author: Your Name
+name: sql-database-analyst
+description: Query a database and summarise results in plain English.
 license: Apache-2.0
+metadata:
+  author: Your Name
+  version: "1.0"
 ---
 
 You are a data analyst. Use the available database tools to answer the user's question clearly.
@@ -127,6 +128,33 @@ Pass the folder — OE Runtime resolves `agent.yaml` inside it automatically.
 
 ---
 
+## Skill Pipelines
+
+Chain multiple SKILL.md skills together in one `agent.yaml`. Skills run in order, passing output as context to the next. Use `trigger_type: manual` to pause and require approval before a skill executes.
+
+```yaml
+name: My Agent
+skills:
+  - path: ./hello-world
+    trigger_type: auto          # runs immediately
+
+  - path: ./email
+    trigger_type: manual        # pauses — requires approval
+    connectors: ["My Email"]    # only this connector is visible to the skill
+
+  - path: ./team-messaging
+    trigger_type: manual
+    connectors: ["My Slack"]
+```
+
+**`connectors:`** on a skill scopes which connectors the LLM can see for that step. Omit to inherit all. Set `connectors: []` for skills that need no data access.
+
+**CLI approval:** when a manual skill is reached, the runtime prints a preview and prompts `[Y/n]`. Press Enter to approve, `n` to skip, or `Ctrl+C` to abort.
+
+**HTTP approval:** see the `/approve-chain` endpoint below.
+
+---
+
 ## Skills Library
 
 Download [oe-runtime-skills.zip](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-skills.zip) — 27 ready-to-run skills covering:
@@ -134,6 +162,8 @@ Download [oe-runtime-skills.zip](https://github.com/enthrium/open-enthrium-ai-ag
 `sql-databases` · `nosql-cache` · `email` · `team-messaging` · `cloud-drives` · `file-storage` · `web-search` · `rest-api` · `graphql` · `ssh` · `image-generation` · `speech-audio` · `video-generation` · `music-generation` · `ocr-vision` · `iot-messaging` · `message-queues` · `blockchain-web3` · `productivity-crm` · `directory-identity` · `local-exec` · `hello-world` · and more
 
 Each skill has a `SKILL.md` + `agent.yaml` + `oe-config.json` ready to go.
+
+The included **OE Skills Collection** (`skills/agent.yaml`) is an orchestrator that exposes all 27 skills from a single entry point — run it, pick a skill, approve it.
 
 ---
 
@@ -162,15 +192,49 @@ npx -y @openenthrium/oe-runtime --serve --config oe-config.json
 | `GET` | `/health` | Liveness check |
 | `POST` | `/run` | Run an agent from inline YAML |
 | `POST` | `/run-file` | Run an agent from a file path on disk |
-| `POST` | `/approve-chain` | Approve or reject a pending manual chain |
+| `POST` | `/approve-chain` | Approve, skip, or abort a paused manual skill |
+
+### Skill Approval Flow
+
+When an agent has `trigger_type: manual` skills, the HTTP server pauses at each one and returns a `pending_skill_chain` token. The client calls `/approve-chain` to resume.
+
+**Step 1 — start the agent:**
 
 ```bash
-# Run a SKILL.md agent via HTTP
 curl -X POST http://localhost:3333/run-file \
   -H "x-api-key: your-secret" \
   -H "Content-Type: application/json" \
-  -d '{"file": "/path/to/my-skill/agent.yaml", "params": {}, "input": "run"}'
+  -d '{"file": "/path/to/agent.yaml", "input": "run"}'
 ```
+
+```json
+{
+  "success": true,
+  "output": "",
+  "pending_skill_chain": { "chain_id": "abc123", "skill_name": "email" }
+}
+```
+
+**Step 2 — approve the skill:**
+
+```bash
+curl -X POST http://localhost:3333/approve-chain \
+  -H "x-api-key: your-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"chain_id": "abc123", "approved": true, "abort": false}'
+```
+
+**Step 3 — skip or abort:**
+
+```bash
+# Skip this skill, continue to the next
+curl ... -d '{"chain_id": "abc123", "approved": false, "abort": false}'
+
+# Abort the entire pipeline immediately
+curl ... -d '{"chain_id": "abc123", "approved": false, "abort": true}'
+```
+
+`chain_id` is one-time use. If another manual skill follows, the response contains a new `pending_skill_chain`. When the pipeline completes, `pending_skill_chain` is `null`.
 
 ---
 
