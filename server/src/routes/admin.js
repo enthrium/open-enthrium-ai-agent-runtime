@@ -116,7 +116,7 @@ router.get("/workspaces", requireManagerOrAdminOrUser, async (req, res) => {
     where,
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { documents: true, chats: true, users: true, agents: true } },
+      _count: { select: { documents: true, chats: true, users: true, agents: true, projects: true } },
       createdBy: { select: { id: true, name: true, email: true } },
     }
   });
@@ -139,7 +139,7 @@ router.post("/workspaces", requireManagerOrAdmin, async (req, res) => {
   const workspace = await req.db.workspace.create({
     data: { name, slug, createdByUserId: req.user.id || null },
     include: {
-      _count: { select: { documents: true, chats: true, users: true, agents: true } },
+      _count: { select: { documents: true, chats: true, users: true, agents: true, projects: true } },
       createdBy: { select: { id: true, name: true, email: true } },
     }
   });

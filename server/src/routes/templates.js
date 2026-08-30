@@ -61,13 +61,24 @@ router.get("/:templateId", (req, res) => {
     if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory())
       return res.status(404).json({ error: "Template not found" });
 
-    const fileMap = {};
-    for (const fname of fs.readdirSync(dir)) {
-      const fpath = path.join(dir, fname);
-      if (!fs.statSync(fpath).isFile()) continue;
-      if (fname.startsWith(".")) continue;
-      fileMap[fname] = fs.readFileSync(fpath, "utf8");
+    // Recursively collect files: root-level = all files; subdirs = SKILL.md only
+    function collectFiles(curDir, base) {
+      for (const fname of fs.readdirSync(curDir)) {
+        if (fname.startsWith(".")) continue;
+        const fpath = path.join(curDir, fname);
+        const stat  = fs.statSync(fpath);
+        const key   = base ? `${base}/${fname}` : fname;
+        if (stat.isFile()) {
+          if (!base || fname.toLowerCase() === "skill.md") {
+            fileMap[key] = fs.readFileSync(fpath, "utf8");
+          }
+        } else if (stat.isDirectory()) {
+          collectFiles(fpath, key);
+        }
+      }
     }
+    const fileMap = {};
+    collectFiles(dir, "");
     res.json({ fileMap });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

@@ -1,5 +1,5 @@
 name: Hello World
-description: The simplest possible OE Runtime agent â€” no connectors, no params, just an LLM response
+description: The simplest possible OE Runtime agent - no connectors, no params, just an LLM response
 
 skills:
   - path: ./

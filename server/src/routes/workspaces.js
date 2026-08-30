@@ -94,7 +94,7 @@ router.post("/:slug/projects/:projectId/agents/:agentId/run", authenticate, asyn
     const ws = await wsMember(req, req.params.slug);
     if (!ws) return res.status(403).json({ error: "Access denied" });
 
-    const { input = "" } = req.body;
+    const { input = "", triggerType = "manual" } = req.body;
     const { getLLMConfig } = require("../providers/llm");
     const yaml    = require("js-yaml");
     const engine  = require("../engine");
@@ -121,10 +121,21 @@ router.post("/:slug/projects/:projectId/agents/:agentId/run", authenticate, asyn
       };
     });
     const doc        = (() => { try { return yaml.load(agent.yamlContent) || {}; } catch { return {}; } })();
+
+    // Extract SKILL.md body (strip YAML frontmatter)
+    function skillMdBody(content) {
+      if (!content) return "";
+      const s = content.trim();
+      if (!s.startsWith("---")) return s;
+      const end = s.indexOf("---", 3);
+      return end === -1 ? s : s.slice(end + 3).trim();
+    }
+    const skillPrompt = skillMdBody(agent.skillContent);
+
     const agentSpec  = {
-      systemPrompt: doc.instructions || doc.system_prompt || doc.systemPrompt || "",
+      systemPrompt: skillPrompt || doc.instructions || doc.system_prompt || doc.systemPrompt || "",
       workflow:     (doc.steps || []).map(s => ({ name: s.name || "", content: s.content || "" })),
-      params: [], maxRounds: 25, input,
+      params: [], maxRounds: 25, input: input || "Run",
     };
     const refNames      = (doc.connectors || []).map(c => c.connection_name);
     const filteredConns = refNames.length ? connectors.filter(c => refNames.includes(c.name)) : connectors;
@@ -134,7 +145,7 @@ router.post("/:slug/projects/:projectId/agents/:agentId/run", authenticate, asyn
     res.setHeader("Connection",    "keep-alive");
 
     const run = await req.db.projectRun.create({
-      data: { projectId: project.id, agentId: agent.id, triggeredByUserId: req.user?.id || null, status: "running", input: input || null },
+      data: { projectId: project.id, agentId: agent.id, triggeredByUserId: req.user?.id || null, status: "running", input: input || null, triggerType: triggerType || "manual" },
     });
 
     const { executeTool } = require("../utils/tools/registry");

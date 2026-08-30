@@ -34,11 +34,12 @@ router.post("/", async (req, res) => {
         createdByUserId: req.user?.id || null,
         agents: {
           create: agents.map(a => ({
-            name:        a.name,
-            description: a.description || null,
-            fileName:    a.fileName    || "agent.yaml",
-            yamlContent: a.yamlContent || "",
-            isDefault:   a.isDefault   || false,
+            name:         a.name,
+            description:  a.description  || null,
+            fileName:     a.fileName     || "agent.yaml",
+            yamlContent:  a.yamlContent  || "",
+            skillContent: a.skillContent || "",
+            isDefault:    a.isDefault    || false,
           })),
         },
       },
@@ -104,16 +105,17 @@ router.get("/:projectId/agents", async (req, res) => {
 
 router.post("/:projectId/agents", async (req, res) => {
   try {
-    const { name, description, fileName, yamlContent, isDefault } = req.body;
+    const { name, description, fileName, yamlContent, skillContent, isDefault } = req.body;
     if (!name) return res.status(400).json({ error: "name required" });
     const agent = await req.db.projectAgent.create({
       data: {
-        projectId:   parseInt(req.params.projectId),
+        projectId:    parseInt(req.params.projectId),
         name,
-        description: description || null,
-        fileName:    fileName    || "agent.yaml",
-        yamlContent: yamlContent || "",
-        isDefault:   !!isDefault,
+        description:  description  || null,
+        fileName:     fileName     || "agent.yaml",
+        yamlContent:  yamlContent  || "",
+        skillContent: skillContent || "",
+        isDefault:    !!isDefault,
       },
     });
     res.json({ agent });
@@ -122,15 +124,16 @@ router.post("/:projectId/agents", async (req, res) => {
 
 router.put("/:projectId/agents/:agentId", async (req, res) => {
   try {
-    const { name, description, fileName, yamlContent, isDefault } = req.body;
+    const { name, description, fileName, yamlContent, skillContent, isDefault } = req.body;
     const agent = await req.db.projectAgent.update({
       where: { id: parseInt(req.params.agentId) },
       data:  {
-        ...(name        !== undefined && { name }),
-        ...(description !== undefined && { description: description || null }),
-        ...(fileName    !== undefined && { fileName }),
-        ...(yamlContent !== undefined && { yamlContent }),
-        ...(isDefault   !== undefined && { isDefault: !!isDefault }),
+        ...(name         !== undefined && { name }),
+        ...(description  !== undefined && { description: description || null }),
+        ...(fileName     !== undefined && { fileName }),
+        ...(yamlContent  !== undefined && { yamlContent }),
+        ...(skillContent !== undefined && { skillContent }),
+        ...(isDefault    !== undefined && { isDefault: !!isDefault }),
       },
     });
     res.json({ agent });
@@ -147,7 +150,7 @@ router.delete("/:projectId/agents/:agentId", async (req, res) => {
 // ── Run agent (SSE) ───────────────────────────────────────────────────────────
 router.post("/:projectId/agents/:agentId/run", async (req, res) => {
   try {
-    const { input = "" } = req.body;
+    const { input = "", triggerType = "manual" } = req.body;
     const [project, agent] = await Promise.all([
       req.db.project.findUnique({ where: { id: parseInt(req.params.projectId) } }),
       req.db.projectAgent.findUnique({ where: { id: parseInt(req.params.agentId) } }),
@@ -168,8 +171,19 @@ router.post("/:projectId/agents/:agentId/run", async (req, res) => {
 
     // Parse YAML → agentSpec
     const doc = (() => { try { return yaml.load(agent.yamlContent) || {}; } catch { return {}; } })();
+
+    // Extract SKILL.md body (strip YAML frontmatter between --- delimiters)
+    function skillMdBody(content) {
+      if (!content) return "";
+      const s = content.trim();
+      if (!s.startsWith("---")) return s;
+      const end = s.indexOf("---", 3);
+      return end === -1 ? s : s.slice(end + 3).trim();
+    }
+    const skillPrompt = skillMdBody(agent.skillContent);
+
     const agentSpec = {
-      systemPrompt: doc.instructions || doc.system_prompt || doc.systemPrompt || "",
+      systemPrompt: skillPrompt || doc.instructions || doc.system_prompt || doc.systemPrompt || "",
       workflow:     (doc.steps || []).map(s => ({ name: s.name || "", content: s.content || "" })),
       params:       [],
       maxRounds:    25,
@@ -192,6 +206,7 @@ router.post("/:projectId/agents/:agentId/run", async (req, res) => {
         triggeredByUserId: req.user?.id || null,
         status:            "running",
         input:             input || null,
+        triggerType:       triggerType || "manual",
       },
     });
 

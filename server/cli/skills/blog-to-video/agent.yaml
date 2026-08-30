@@ -1,5 +1,5 @@
 name: Blog to Video Agent
-description: Converts a blog post into a teaching video â€” fetches content, plans slides, generates images and narration, and exports an MP4
+description: Converts a blog post into a teaching video - fetches content, plans slides, generates images and narration, and exports an MP4
 
 params:
   - name: blog_url

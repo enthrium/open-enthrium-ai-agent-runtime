@@ -1,5 +1,5 @@
 name: Blockchain Agent
-description: Query blockchain data â€” balances, transactions, and smart contracts
+description: Query blockchain data - balances, transactions, and smart contracts
 
 connectors:
   - connection_name: Ethereum

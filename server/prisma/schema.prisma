@@ -265,9 +265,10 @@ model ProjectAgent {
   projectId   Int
   name        String
   description String?
-  fileName    String   @default("agent.yaml")
-  yamlContent String   @default("")
-  isDefault   Boolean  @default(false)
+  fileName     String   @default("agent.yaml")
+  yamlContent  String   @default("")
+  skillContent String   @default("")
+  isDefault    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -285,6 +286,7 @@ model ProjectRun {
   output            String?
   error             String?
   cancelRequested   Boolean   @default(false)
+  triggerType       String    @default("manual")
   startedAt         DateTime  @default(now())
   completedAt       DateTime?
 

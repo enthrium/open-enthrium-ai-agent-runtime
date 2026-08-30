@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.9.0] — 2026-08-30
+
+### Changed
+- **Version bump** — aligned with platform v1.9.0 release; no functional changes to CLI or HTTP server runtime in this release.
+
+---
+
 ## [v1.8.9] — 2026-08-30
 
 ### Changed

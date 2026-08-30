@@ -4,6 +4,19 @@ const { logActivity } = require("../utils/activityLog");
 
 router.use(authenticate, requireAdmin);
 
+// ── Export LLM settings as oe-config snippet (real key, admin only) ───────────
+router.get("/oe-config", async (req, res) => {
+  const rows = await req.db.setting.findMany();
+  const s    = rows.reduce((acc, r) => { acc[r.key] = r.value; return acc; }, {});
+  const llm  = {
+    provider: s.llm_provider || "openai",
+    model:    s.llm_model    || "gpt-4o",
+    apiKey:   s.llm_api_key  || "",
+    ...(s.llm_base_url ? { baseUrl: s.llm_base_url } : {}),
+  };
+  res.json({ llm });
+});
+
 router.get("/", async (req, res) => {
   const settings = await req.db.setting.findMany();
   const safe = settings.reduce((acc, s) => {
