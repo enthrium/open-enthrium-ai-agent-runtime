@@ -98,6 +98,16 @@ router.post("/:slug/projects/:projectId/agents/:agentId/run", authenticate, asyn
     const { getLLMConfig } = require("../providers/llm");
     const yaml    = require("js-yaml");
     const engine  = require("../engine");
+    const fs      = require("fs");
+    const path    = require("path");
+
+    const SKILLS_DIR = path.resolve(__dirname, "../../cli/skills");
+
+    function resolveSkillPath(folderPath) {
+      if (!folderPath) return null;
+      if (path.isAbsolute(folderPath)) return folderPath;
+      return path.resolve(__dirname, "../../../", folderPath);
+    }
 
     const [project, agent] = await Promise.all([
       req.db.project.findUnique({ where: { id: parseInt(req.params.projectId) } }),
@@ -105,12 +115,30 @@ router.post("/:slug/projects/:projectId/agents/:agentId/run", authenticate, asyn
     ]);
     if (!project || !agent) return res.status(404).json({ error: "Not found" });
 
-    const llmConfig  = await getLLMConfig();
-    const oeConfig   = (() => { try { return JSON.parse(project.oeConfig || "{}"); } catch { return {}; } })();
-    // Mirror CLI prepareConnectors: extract creds and wrap in authConfig/config JSON strings
-    // so every adapter can read them via JSON.parse(connector.config / connector.authConfig)
-    const connectors = (oeConfig.connectors || []).map((c, i) => {
+    // ── Resolve sources: disk (folderPath) takes priority over DB blobs ──────────
+    let llmConfig    = await getLLMConfig();
+    let yamlContent  = agent.yamlContent;
+    let skillContent = "";  // SKILL.md is disk-only, never in DB
+    let oeConfigObj  = (() => { try { return JSON.parse(project.oeConfig || "{}"); } catch { return {}; } })();
+
+    const absPath = agent.folderPath ? resolveSkillPath(agent.folderPath) : null;
+    if (absPath && fs.existsSync(absPath)) {
+      try { yamlContent  = fs.readFileSync(path.join(absPath, "agent.yaml"), "utf8"); } catch {}
+      try { skillContent = fs.readFileSync(path.join(absPath, "SKILL.md"), "utf8"); } catch {}
+      try {
+        const diskCfg = JSON.parse(fs.readFileSync(path.join(absPath, "oe-config.json"), "utf8"));
+        oeConfigObj = diskCfg;
+        const key = diskCfg.llm?.apiKey || "";
+        if (key && !/YOUR_API_KEY|sk-\.\.\.|placeholder/i.test(key)) llmConfig = diskCfg.llm;
+      } catch {}
+    }
+
+    // Build connectors; auto-set shell cwd to skill folder
+    const connectors = (oeConfigObj.connectors || []).map((c, i) => {
       const { connection_name, connection_type, ...creds } = c;
+      if (connection_type === "shell" && absPath && (!creds.cwd || creds.cwd === ".")) {
+        creds.cwd = absPath;
+      }
       return {
         id:         i + 1,
         name:       connection_name,
@@ -118,9 +146,11 @@ router.post("/:slug/projects/:projectId/agents/:agentId/run", authenticate, asyn
         status:     "active",
         authConfig: JSON.stringify(creds),
         config:     JSON.stringify(creds),
+        ...creds,
       };
     });
-    const doc        = (() => { try { return yaml.load(agent.yamlContent) || {}; } catch { return {}; } })();
+
+    const doc        = (() => { try { return yaml.load(yamlContent) || {}; } catch { return {}; } })();
 
     // Extract SKILL.md body (strip YAML frontmatter)
     function skillMdBody(content) {
@@ -130,7 +160,7 @@ router.post("/:slug/projects/:projectId/agents/:agentId/run", authenticate, asyn
       const end = s.indexOf("---", 3);
       return end === -1 ? s : s.slice(end + 3).trim();
     }
-    const skillPrompt = skillMdBody(agent.skillContent);
+    const skillPrompt = skillMdBody(skillContent);
 
     const agentSpec  = {
       systemPrompt: skillPrompt || doc.instructions || doc.system_prompt || doc.systemPrompt || "",

@@ -61,24 +61,30 @@ router.get("/:templateId", (req, res) => {
     if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory())
       return res.status(404).json({ error: "Template not found" });
 
-    // Recursively collect files: root-level = all files; subdirs = SKILL.md only
-    function collectFiles(curDir, base) {
+    const TEXT_EXTS = new Set([".md",".txt",".yaml",".yml",".json",".py",".js",".ts",
+      ".jsx",".tsx",".sh",".html",".css",".xml",".csv",".toml",".ini",".rb",".go",
+      ".rs",".java",".cpp",".c",".h",".sql",".graphql",".proto",".env",".gitignore"]);
+
+    // Recursively collect all text files from entire tree
+    function collectFiles(curDir, base, depth) {
+      if (depth > 8) return;
       for (const fname of fs.readdirSync(curDir)) {
         if (fname.startsWith(".")) continue;
         const fpath = path.join(curDir, fname);
         const stat  = fs.statSync(fpath);
         const key   = base ? `${base}/${fname}` : fname;
         if (stat.isFile()) {
-          if (!base || fname.toLowerCase() === "skill.md") {
-            fileMap[key] = fs.readFileSync(fpath, "utf8");
+          const ext = fname.slice(fname.lastIndexOf(".")).toLowerCase();
+          if (TEXT_EXTS.has(ext) || !fname.includes(".")) {
+            try { fileMap[key] = fs.readFileSync(fpath, "utf8"); } catch {}
           }
         } else if (stat.isDirectory()) {
-          collectFiles(fpath, key);
+          collectFiles(fpath, key, depth + 1);
         }
       }
     }
     const fileMap = {};
-    collectFiles(dir, "");
+    collectFiles(dir, "", 0);
     res.json({ fileMap });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

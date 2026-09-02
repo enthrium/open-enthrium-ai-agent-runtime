@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:../storage/openenterprise.db"
+  url      = "file:../storage/openenthrium.db"
 }
 
 model User {
@@ -267,7 +267,8 @@ model ProjectAgent {
   description String?
   fileName     String   @default("agent.yaml")
   yamlContent  String   @default("")
-  skillContent String   @default("")
+  filesJson    String   @default("{}")
+  folderPath   String   @default("")
   isDefault    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

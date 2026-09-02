@@ -1,7 +1,78 @@
-const router = require("express").Router();
+const router   = require("express").Router();
+const http     = require("http");
 const { authenticate } = require("../middleware/auth");
 const { similaritySearch } = require("../utils/vectorStore");
 const { getLLMClient, getSetting } = require("../providers/llm");
+const fs   = require("fs");
+const path = require("path");
+const yaml = require("js-yaml");
+
+// ── MCP helpers ───────────────────────────────────────────────────────────────
+let _mcpReqId = 1;
+
+function mcpJsonRpc(method, params = {}) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({ jsonrpc: "2.0", id: _mcpReqId++, method, params });
+    const port = parseInt(process.env.MCP_PORT) || 3003;
+    const opts = {
+      hostname: "127.0.0.1", port, path: "/mcp", method: "POST",
+      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+    };
+    const req = http.request(opts, res => {
+      let data = "";
+      res.on("data", d => data += d);
+      res.on("end", () => {
+        try { resolve(JSON.parse(data)); } catch { resolve({ result: null }); }
+      });
+    });
+    req.on("error", reject);
+    req.setTimeout(30000, () => { req.destroy(); reject(new Error("MCP timeout")); });
+    req.write(body);
+    req.end();
+  });
+}
+
+async function getMcpTools() {
+  try {
+    const res = await mcpJsonRpc("tools/list");
+    return res.result?.tools || [];
+  } catch { return []; }
+}
+
+async function callMcpTool(name, toolArgs) {
+  try {
+    const res = await mcpJsonRpc("tools/call", { name, arguments: toolArgs || {} });
+    if (res.error) return `Error: ${res.error.message}`;
+    const content = res.result?.content || [];
+    return content.map(c => c.text || JSON.stringify(c)).join("\n").slice(0, 8000);
+  } catch (err) { return `MCP error: ${err.message}`; }
+}
+
+// ── Read available agents from MCP_AGENTS_DIR ─────────────────────────────────
+function getAgentsContext() {
+  const agentsDir = process.env.MCP_AGENTS_DIR;
+  if (!agentsDir || !fs.existsSync(agentsDir)) return null;
+  try {
+    const entries = fs.readdirSync(agentsDir, { withFileTypes: true }).filter(e => e.isDirectory());
+    const agents  = [];
+    for (const entry of entries) {
+      const agentDir = path.join(agentsDir, entry.name);
+      const yamlFile = ["agent.yaml", "agent.yml"]
+        .map(f => path.join(agentDir, f)).find(f => fs.existsSync(f));
+      if (!yamlFile) continue;
+      try {
+        const doc = yaml.load(fs.readFileSync(yamlFile, "utf8")) || {};
+        agents.push({
+          name:        doc.name        || entry.name,
+          description: doc.description || "",
+        });
+      } catch {}
+    }
+    if (!agents.length) return null;
+    const list = agents.map(a => `  • ${a.name}${a.description ? " — " + a.description : ""}`).join("\n");
+    return `\nAVAILABLE AUTOMATION AGENTS:\n${list}`;
+  } catch { return null; }
+}
 
 function normalizeRefusal(response, refusalMsg) {
   const trimmed = (response || "").trim();
@@ -250,7 +321,8 @@ STRICT RULES:
 
 `;
 
-  const systemPrompt = guardrail + basePrompt + docSection;
+  const agentsContext = getAgentsContext();
+  const systemPrompt  = guardrail + basePrompt + docSection + (agentsContext || "");
 
   // ── Stream response ───────────────────────────────────────────────────────
 
@@ -277,47 +349,198 @@ STRICT RULES:
     const { provider, client } = await getLLMClient();
     const model = (await getSetting("llm_model")) || process.env.OPENAI_MODEL || process.env.OLLAMA_MODEL || "gpt-4o";
 
+    // ── Try MCP (non-blocking — falls back to plain chat if MCP is down) ──
+    const mcpTools    = await getMcpTools().catch(() => []);
+    const hasMcpTools = mcpTools.length > 0;
+
+    // When tools are available relax the strict doc-only guardrail
+    const effectiveSystem = hasMcpTools
+      ? basePrompt + docSection + (agentsContext || "") + `
+
+You also have access to automation tools (listed in your tool definitions). Follow these rules when using tools:
+
+DATABASE QUERIES: Never guess column or table names. Always explore the schema first:
+1. Call the query tool with: SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' (postgres) or SHOW TABLES (mysql)
+2. Then DESCRIBE or SELECT column_name FROM information_schema.columns WHERE table_name = '...' to get columns
+3. Only then write the business query using the real column names
+
+AGENTS: When the user asks to run an agent, call list_agents first to get the file path, then call run_agent with that path. Never tell the user to go to the Projects section — run it directly using the tools. If run_agent returns a pending_skill_chain, ask the user "A manual step is waiting — approve, skip, or abort?" and when they answer, call approve_chain with the chain_id automatically. Never ask the user to call approve_chain themselves.
+GENERAL: After tool results, summarize clearly. If a tool errors, try an alternative approach before giving up.`
+      : systemPrompt;
+
+    const MAX_TOOL_ROUNDS = 25;
+
+    // ── Anthropic path ─────────────────────────────────────────────────────
     if (provider === "anthropic") {
-      const stream = await client.messages.create({
-        model: model || "claude-sonnet-4-6",
-        max_tokens: 4096,
-        system: systemPrompt,
-        messages: [...historyMessages, { role: "user", content: message }],
-        temperature,
-        stream: true
-      });
-      for await (const event of stream) {
-        if (event.type === "message_start")  inputTokens  = event.message?.usage?.input_tokens  || 0;
-        if (event.type === "message_delta")  outputTokens = event.usage?.output_tokens || 0;
-        if (event.type === "content_block_delta" && event.delta?.type === "text_delta") {
-          const chunk = event.delta.text;
-          fullResponse += chunk;
-          safeWrite(`data: ${JSON.stringify({ chunk })}\n\n`);
+      if (hasMcpTools) {
+        // Tool-aware streaming loop
+        const anthropicTools = mcpTools.map(t => ({
+          name: t.name, description: t.description,
+          input_schema: t.inputSchema || { type: "object", properties: {} },
+        }));
+        const msgs = [...historyMessages, { role: "user", content: message }];
+
+        for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+          const stream = await client.messages.create({
+            model: model || "claude-sonnet-4-6", max_tokens: 4096,
+            system: effectiveSystem, messages: msgs,
+            tools: anthropicTools, temperature, stream: true,
+          });
+
+          let stopReason = "";
+          const blocks   = {};   // index → block accumulator
+          let   textAcc  = "";
+
+          for await (const ev of stream) {
+            if (ev.type === "message_start")  inputTokens  += ev.message?.usage?.input_tokens  || 0;
+            if (ev.type === "message_delta")  { outputTokens += ev.usage?.output_tokens || 0; stopReason = ev.delta?.stop_reason || stopReason; }
+            if (ev.type === "content_block_start") blocks[ev.index] = { ...ev.content_block, _jsonAcc: "" };
+            if (ev.type === "content_block_delta") {
+              const b = blocks[ev.index];
+              if (!b) continue;
+              if (ev.delta.type === "text_delta") {
+                textAcc      += ev.delta.text;
+                fullResponse += ev.delta.text;
+                safeWrite(`data: ${JSON.stringify({ chunk: ev.delta.text })}\n\n`);
+              } else if (ev.delta.type === "input_json_delta") {
+                b._jsonAcc += ev.delta.partial_json;
+              }
+            }
+          }
+
+          if (stopReason === "tool_use") {
+            // Reconstruct full assistant message
+            const assistantContent = Object.values(blocks).map(b => {
+              if (b.type === "text")     return { type: "text", text: textAcc };
+              if (b.type === "tool_use") return { type: "tool_use", id: b.id, name: b.name, input: JSON.parse(b._jsonAcc || "{}") };
+              return b;
+            });
+            msgs.push({ role: "assistant", content: assistantContent });
+
+            const toolResults = [];
+            for (const b of Object.values(blocks).filter(b => b.type === "tool_use")) {
+              const toolInput = JSON.parse(b._jsonAcc || "{}");
+              safeWrite(`data: ${JSON.stringify({ tool_call: b.name })}\n\n`);
+              const result = await callMcpTool(b.name, toolInput);
+              toolResults.push({ type: "tool_result", tool_use_id: b.id, content: result });
+            }
+            msgs.push({ role: "user", content: toolResults });
+          } else {
+            break; // end_turn — text already streamed above
+          }
+        }
+      } else {
+        // Plain streaming (no tools)
+        const stream = await client.messages.create({
+          model: model || "claude-sonnet-4-6", max_tokens: 4096,
+          system: effectiveSystem,
+          messages: [...historyMessages, { role: "user", content: message }],
+          temperature, stream: true,
+        });
+        for await (const ev of stream) {
+          if (ev.type === "message_start")  inputTokens  = ev.message?.usage?.input_tokens  || 0;
+          if (ev.type === "message_delta")  outputTokens = ev.usage?.output_tokens || 0;
+          if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") {
+            const chunk = ev.delta.text;
+            fullResponse += chunk;
+            safeWrite(`data: ${JSON.stringify({ chunk })}\n\n`);
+          }
         }
       }
+
+    // ── OpenAI / Ollama path ───────────────────────────────────────────────
     } else {
-      const stream = await client.chat.completions.create({
-        model,
-        messages: [{ role: "system", content: systemPrompt }, ...historyMessages, { role: "user", content: message }],
-        temperature,
-        max_tokens: 4096,
-        stream: true,
-        stream_options: { include_usage: true }
-      });
-      for await (const part of stream) {
-        if (part.usage) {
-          inputTokens  = part.usage.prompt_tokens     || 0;
-          outputTokens = part.usage.completion_tokens || 0;
+      if (hasMcpTools) {
+        // Tool-aware streaming loop
+        const openaiTools = mcpTools.map(t => ({
+          type: "function",
+          function: {
+            name: t.name, description: t.description,
+            parameters: t.inputSchema || { type: "object", properties: {} },
+          },
+        }));
+        const msgs = [{ role: "system", content: effectiveSystem }, ...historyMessages, { role: "user", content: message }];
+
+        for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+          const stream = await client.chat.completions.create({
+            model, messages: msgs, tools: openaiTools, tool_choice: "auto",
+            max_tokens: 4096, temperature, stream: true, stream_options: { include_usage: true },
+          });
+
+          let   finishReason   = "";
+          const tcAccum        = {};   // index → {id, name, args}
+          let   roundHasTools  = false;
+
+          for await (const part of stream) {
+            if (part.usage) {
+              inputTokens  += part.usage.prompt_tokens     || 0;
+              outputTokens += part.usage.completion_tokens || 0;
+            }
+            const choice = part.choices?.[0];
+            if (!choice) continue;
+            if (choice.finish_reason) finishReason = choice.finish_reason;
+
+            const delta = choice.delta;
+            if (delta.content) {
+              fullResponse += delta.content;
+              safeWrite(`data: ${JSON.stringify({ chunk: delta.content })}\n\n`);
+            }
+            if (delta.tool_calls) {
+              roundHasTools = true;
+              for (const tc of delta.tool_calls) {
+                if (!tcAccum[tc.index]) tcAccum[tc.index] = { id: "", name: "", args: "" };
+                if (tc.id)                     tcAccum[tc.index].id   += tc.id;
+                if (tc.function?.name)         tcAccum[tc.index].name += tc.function.name;
+                if (tc.function?.arguments)    tcAccum[tc.index].args += tc.function.arguments;
+              }
+            }
+          }
+
+          if (finishReason === "tool_calls" || roundHasTools) {
+            const toolCallsList = Object.values(tcAccum);
+            msgs.push({
+              role: "assistant", content: null,
+              tool_calls: toolCallsList.map(tc => ({
+                id: tc.id, type: "function",
+                function: { name: tc.name, arguments: tc.args },
+              })),
+            });
+            for (const tc of toolCallsList) {
+              safeWrite(`data: ${JSON.stringify({ tool_call: tc.name })}\n\n`);
+              const result = await callMcpTool(tc.name, JSON.parse(tc.args || "{}"));
+              msgs.push({ role: "tool", tool_call_id: tc.id, content: result });
+            }
+          } else {
+            break; // stop — text already streamed
+          }
         }
-        const chunk = part.choices?.[0]?.delta?.content || "";
-        if (chunk) {
-          fullResponse += chunk;
-          safeWrite(`data: ${JSON.stringify({ chunk })}\n\n`);
+
+        if (!inputTokens && !outputTokens && fullResponse) {
+          inputTokens  = Math.ceil((effectiveSystem.length + message.length) / 4);
+          outputTokens = Math.ceil(fullResponse.length / 4);
         }
-      }
-      if (!inputTokens && !outputTokens && fullResponse) {
-        inputTokens  = Math.ceil((systemPrompt.length + message.length) / 4);
-        outputTokens = Math.ceil(fullResponse.length / 4);
+      } else {
+        // Plain streaming (no tools)
+        const stream = await client.chat.completions.create({
+          model,
+          messages: [{ role: "system", content: effectiveSystem }, ...historyMessages, { role: "user", content: message }],
+          temperature, max_tokens: 4096, stream: true, stream_options: { include_usage: true },
+        });
+        for await (const part of stream) {
+          if (part.usage) {
+            inputTokens  = part.usage.prompt_tokens     || 0;
+            outputTokens = part.usage.completion_tokens || 0;
+          }
+          const chunk = part.choices?.[0]?.delta?.content || "";
+          if (chunk) {
+            fullResponse += chunk;
+            safeWrite(`data: ${JSON.stringify({ chunk })}\n\n`);
+          }
+        }
+        if (!inputTokens && !outputTokens && fullResponse) {
+          inputTokens  = Math.ceil((effectiveSystem.length + message.length) / 4);
+          outputTokens = Math.ceil(fullResponse.length / 4);
+        }
       }
     }
 

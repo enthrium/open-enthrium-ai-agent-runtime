@@ -65,14 +65,14 @@ function buildHistoryContext(chatKey, newText) {
 
 // prepareConnectors imported from src/utils/prepareConnectors.js
 
-function buildAgentSpec(agentYaml, params, input) {
+function buildAgentSpec(agentYaml, params) {
   return {
     systemPrompt: agentYaml.systemPrompt || agentYaml.system_prompt || agentYaml.instructions || "",
     workflow:     agentYaml.steps        || agentYaml.workflow       || [],
     params:       agentYaml.params       || [],
     paramValues:  params  || {},
     maxRounds:    agentYaml.maxRounds    || 25,
-    input:        input   || null,
+    input:        null,
   };
 }
 
@@ -165,7 +165,7 @@ async function runSkillsServer(skills, parentOutput, agentFile, config, depth) {
 
     const contextInput = lastOutput
       ? `Context from previous step:\n\n${lastOutput}\n\nNow execute your task.`
-      : "Execute your task as described.";
+      : null; // engine default: "Execute the agent task now using the available tools."
 
     const agentSpec = {
       systemPrompt: skillSpec.instructions || "",
@@ -192,13 +192,13 @@ async function runSkillsServer(skills, parentOutput, agentFile, config, depth) {
   return { output: lastOutput, pending_skill_chain: null };
 }
 
-async function runAgentServer(agentFile, agentYaml, config, input, params, depth = 0) {
+async function runAgentServer(agentFile, agentYaml, config, params, depth = 0) {
   const connectors = prepareConnectors(agentYaml.connectors, config.connectors);
-  const agentSpec  = buildAgentSpec(agentYaml, params, input);
+  const agentSpec  = buildAgentSpec(agentYaml, params);
 
-  // Skip LLM call when no instructions or steps defined — go straight to skills/chains
+  // Skip LLM call when no instructions or steps defined — go straight to skills
   const hasWork = (agentSpec.systemPrompt || "").trim() || agentSpec.workflow?.length;
-  let output = typeof input === "string" ? input : "";
+  let output = "";
 
   if (hasWork) {
     const llmResult = await engine.run(agentSpec, config.llm, connectors, {
@@ -439,7 +439,7 @@ async function handleWebhookMessage({ platform, config, project, cwd, chatId, us
     console.log(`[Webhook/${platform}] Running: ${path.basename(agentFile)}`);
 
     const agentParams = { message: text, chat_id: String(chatId), user, ...params };
-    const result      = await runAgentServer(agentFile, agentYaml, config, input, agentParams, 0);
+    const result      = await runAgentServer(agentFile, agentYaml, config, agentParams, 0);
 
     if (result.pending_skill_chain) {
       const ps = result.pending_skill_chain;
@@ -901,7 +901,7 @@ exports.start = function start(config) {
 
   // ── POST /run ────────────────────────────────────────────────────────────────
   app.post("/run", async (req, res) => {
-    const { yaml: yamlText, params = {}, input = "run" } = req.body || {};
+    const { yaml: yamlText, params = {} } = req.body || {};
     if (!yamlText) return res.status(400).json({ error: "yaml is required" });
 
     let agentYaml;
@@ -910,7 +910,7 @@ exports.start = function start(config) {
 
     const t0 = Date.now();
     try {
-      const result = await runAgentServer(null, agentYaml, config, input, params, 0);
+      const result = await runAgentServer(null, agentYaml, config, params, 0);
       res.json({ success: true, ...result, duration_ms: Date.now() - t0 });
     } catch (err) {
       res.status(500).json({ success: false, error: err.message, duration_ms: Date.now() - t0 });
@@ -919,7 +919,7 @@ exports.start = function start(config) {
 
   // ── POST /run-file ───────────────────────────────────────────────────────────
   app.post("/run-file", async (req, res) => {
-    const { file, params = {}, input = "run" } = req.body || {};
+    const { file, params = {} } = req.body || {};
     if (!file)                   return res.status(400).json({ error: "file is required" });
     if (!fs.existsSync(file))    return res.status(404).json({ error: "file not found: " + file });
 
@@ -929,7 +929,7 @@ exports.start = function start(config) {
 
     const t0 = Date.now();
     try {
-      const result = await runAgentServer(file, agentYaml, config, input, params, 0);
+      const result = await runAgentServer(file, agentYaml, config, params, 0);
       res.json({ success: true, ...result, duration_ms: Date.now() - t0 });
     } catch (err) {
       res.status(500).json({ success: false, error: err.message, duration_ms: Date.now() - t0 });

@@ -1,0 +1,7 @@
+name: docx
+description: "Create, read, edit, and manipulate Word documents (.docx / .dotx files)"
+trigger_type: auto
+connectors:
+  - connection_name: shell
+    connection_type: shell
+    cwd: "."

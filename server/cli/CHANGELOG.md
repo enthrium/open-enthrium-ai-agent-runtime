@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.9.1] — 2026-09-02
+
+### Fixed
+- **Skills-only agents auto-run via API server** — agents with only `skills:` and no `systemPrompt` or `steps` were previously passed raw user input as misleading context to the skill LLM, causing confused responses; the engine now fires with its own default trigger ("Execute the agent task now using the available tools.")
+- **Version string consistency** — binary version now matches the npm package version; both `server/package.json` and `npm/package.json` are bumped together before binaries are compiled
+
+### Changed
+- **`input` field removed from entire stack** — `/run`, `/run-file`, SDK, CLI internals, all curl examples, website, docs, and blog posts; `agent.yaml` is self-contained — either `skills:` executes SKILL.md or `steps:` runs inline; no user-supplied input is needed
+- **SDK gains skills pipeline** — `skills:` in `agent.yaml` now executes SKILL.md steps via SDK (was silently ignored); manual skills are gracefully skipped with an optional `onSkipManual` hook; connector scoping and chained output work the same as CLI/server
+- **Hello World `SKILL.md`** — removed hardcoded "Aug 25" date; step now reads "Share one notable tech event from today in history"
+
+---
+
 ## [v1.9.0] — 2026-08-30
 
 ### Changed

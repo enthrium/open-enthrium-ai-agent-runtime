@@ -1,0 +1,6 @@
+{
+  "llm": { "provider": "openai", "model": "gpt-4o", "apiKey": "YOUR_API_KEY" },
+  "connectors": [
+    { "connection_name": "shell", "connection_type": "shell", "cwd": "." }
+  ]
+}
