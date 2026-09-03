@@ -125,7 +125,8 @@ jobs:
 
   publish-npm:
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux, build-macos]
+    # No longer depends on binary builds — we bundle source directly into the npm package.
+    # Binary builds still run in parallel for the GitHub release assets.
     steps:
       - uses: actions/checkout@v4
 
@@ -133,6 +134,22 @@ jobs:
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Install server dependencies
+        working-directory: server
+        run: yarn install --frozen-lockfile --ignore-scripts
+
+      - name: Build Node.js bundle for npm package
+        working-directory: server
+        run: |
+          npx ncc build cli/index.js \
+            --out cli/npm/bundle-tmp \
+            --external oracledb \
+            --external better-sqlite3 \
+            --external snowflake-sdk \
+            --external mssql
+          mv cli/npm/bundle-tmp/index.js cli/npm/bundle.js
+          rm -rf cli/npm/bundle-tmp
 
       - name: Publish @openenthrium/oe-runtime to npm
         working-directory: server/cli/npm

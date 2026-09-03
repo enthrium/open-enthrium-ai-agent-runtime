@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.9.2] — 2026-09-03
+
+### Fixed
+- **`npx` now works reliably** — npm package switched from binary-download-via-postinstall to a bundled Node.js source package (ncc bundle); `npx -y @openenthrium/oe-runtime` works without needing `postinstall` to run or a binary to be pre-cached
+- **Version always correct** — version in the startup banner now always matches the npm package version; no separate binary compilation step can get out of sync
+
+### Changed
+- **npm package architecture** — `bin.js` now runs a bundled `bundle.js` (ncc-compiled source + deps) directly via Node.js instead of launching a downloaded platform binary; platform binaries on GitHub releases are unchanged for users who want a standalone executable with no Node.js requirement
+- **No postinstall download** — `postinstall.js` removed from npm package; first-run binary download eliminated entirely for npm users
+
+---
+
 ## [v1.9.1] — 2026-09-02
 
 ### Fixed
