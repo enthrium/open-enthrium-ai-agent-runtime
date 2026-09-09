@@ -29,7 +29,9 @@ POST /images/generations with body:
   "size": "1024x1024"
 }
 ```
-The response will contain `data[0].local_path` with the saved image file path. Report that path.
+The response will contain `data[0].local_path` with the saved image file path.
+Images are saved to: `E:\oe-smoketest\oe-image-<timestamp>-0.png`
+Report the exact local_path from the response.
 
 ## Step 3: Report
 

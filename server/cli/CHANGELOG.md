@@ -5,10 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.9.3] — 2026-09-03
+
+### Changed
+- **Version bump** — aligned with platform v1.9.3 release; no functional changes to OE Runtime in this release.
+
+---
+
 ## [v1.9.2] — 2026-09-03
 
 ### Fixed
-- **`npx` now works reliably** — npm package switched from binary-download-via-postinstall to a bundled Node.js source package (ncc bundle); `npx -y @openenthrium/oe-runtime` works without needing `postinstall` to run or a binary to be pre-cached
+- **`npx` now works reliably** — npm package switched from binary-download-via-postinstall to a bundled Node.js source package (ncc bundle); `npx -y @openenthrium/oe-runtime@latest` works without needing `postinstall` to run or a binary to be pre-cached
 - **Version always correct** — version in the startup banner now always matches the npm package version; no separate binary compilation step can get out of sync
 
 ### Changed
@@ -115,7 +122,7 @@ No changes to OE Runtime in this release.
 ## [v1.8.1] — 2026-08-25
 
 ### Fixed
-- **npx / binary hang when `server.enabled: true` in config**: if `oe-config.json` contained `"server": { "enabled": true }`, running `oe-runtime agent.yaml` (or `npx -y @openenthrium/oe-runtime agent.yaml`) silently booted into HTTP server mode and never exited — completely ignoring the agent-file argument. Fix: `server.enabled` in config now only auto-starts the server when **no agent file is passed** on the command line. An explicit agent-file argument always triggers single-run mode regardless of the config.
+- **npx / binary hang when `server.enabled: true` in config**: if `oe-config.json` contained `"server": { "enabled": true }`, running `oe-runtime agent.yaml` (or `npx -y @openenthrium/oe-runtime@latest agent.yaml`) silently booted into HTTP server mode and never exited — completely ignoring the agent-file argument. Fix: `server.enabled` in config now only auto-starts the server when **no agent file is passed** on the command line. An explicit agent-file argument always triggers single-run mode regardless of the config.
 
 ---
 

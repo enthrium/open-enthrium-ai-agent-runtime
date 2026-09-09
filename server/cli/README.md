@@ -31,7 +31,7 @@ Supports two agent formats:
 ## Quick Start
 
 ```bash
-npx -y @openenthrium/oe-runtime ./skills/hello-world
+npx -y @openenthrium/oe-runtime@latest ./skills/hello-world
 ```
 
 Or download a binary from the [releases page](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest) and run:
@@ -120,7 +120,7 @@ Summarise the findings in plain English with key numbers highlighted.
 **Run it:**
 
 ```bash
-npx -y @openenthrium/oe-runtime ./my-skill
+npx -y @openenthrium/oe-runtime@latest ./my-skill
 ```
 
 Pass the folder — OE Runtime resolves `agent.yaml` inside it automatically.
@@ -181,7 +181,7 @@ Enable server mode in `oe-config.json`:
 Start:
 
 ```bash
-npx -y @openenthrium/oe-runtime --serve --config oe-config.json
+npx -y @openenthrium/oe-runtime@latest --serve --config oe-config.json
 ```
 
 **Endpoints:**

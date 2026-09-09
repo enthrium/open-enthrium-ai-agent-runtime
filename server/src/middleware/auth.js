@@ -30,23 +30,6 @@ function requireManagerOrAdmin(req, res, next) {
   next();
 }
 
-async function authenticateApiKey(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "API key required. Use: Authorization: Bearer emb_..." });
-  }
-  const rawKey = header.slice(7);
-  if (!rawKey.startsWith("emb_")) {
-    return res.status(401).json({ error: "Invalid API key format" });
-  }
-  const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
-  const apiKey  = await req.db.apiKey.findFirst({ where: { keyHash, revoked: false } });
-  if (!apiKey) return res.status(401).json({ error: "Invalid or revoked API key" });
-
-  await req.db.apiKey.update({ where: { id: apiKey.id }, data: { lastUsedAt: new Date() } });
-  req.apiKey = apiKey;
-  next();
-}
 
 function requireManagerOrAdminOrUser(req, res, next) {
   if (!req.user) return res.status(401).json({ error: "Not authenticated" });
@@ -60,4 +43,4 @@ function requireCommercial(req, res, next) {
   next();
 }
 
-module.exports = { authenticate, requireAdmin, requireManagerOrAdmin, requireManagerOrAdminOrUser, authenticateApiKey, requireCommercial };
+module.exports = { authenticate, requireAdmin, requireManagerOrAdmin, requireManagerOrAdminOrUser, requireCommercial };

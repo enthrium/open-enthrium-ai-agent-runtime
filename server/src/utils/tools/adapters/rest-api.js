@@ -92,12 +92,15 @@ async function executeTool(action, args, connector) {
     try {
       const parsed = JSON.parse(text);
 
-      // OpenAI-style image response with b64_json — save each image to a temp file
+      // OpenAI-style image response with b64_json — save each image to storage/images/
       if (Array.isArray(parsed?.data) && parsed.data[0]?.b64_json) {
+        const imgDir = path.join(__dirname, "../../../../storage/images");
+        fs.mkdirSync(imgDir, { recursive: true });
         const saved = parsed.data.map((item, i) => {
-          const tmpFile = path.join(os.tmpdir(), `oe-image-${Date.now()}-${i}.png`);
-          fs.writeFileSync(tmpFile, Buffer.from(item.b64_json, "base64"));
-          return { ...item, b64_json: undefined, local_path: tmpFile };
+          const fileName = `oe-image-${Date.now()}-${i}.png`;
+          const outFile  = path.join(imgDir, fileName);
+          fs.writeFileSync(outFile, Buffer.from(item.b64_json, "base64"));
+          return { ...item, b64_json: undefined, local_path: outFile };
         });
         return JSON.stringify({ ...parsed, data: saved }, null, 2).slice(0, 8000);
       }

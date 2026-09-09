@@ -157,15 +157,24 @@ function autoFillMissingFiles(fileMap, safeName) {
   }
 }
 
-// ── Write files + create DB entry ─────────────────────────────────────────────
+// ── Write RAW files to disk — agent.yaml + oe-config.json go to DB only ────────
+// Raw source files (SKILL.md, .py, scripts/, data files, etc.) live on disk so
+// MCP tools can read them.  Auto-generated agent.yaml / oe-config.json are the
+// webapp's responsibility and live exclusively in DB (ProjectAgent.yamlContent
+// and Project.oeConfig).  Never write the generated files back to disk.
+const DB_ONLY_FILES = new Set(["agent.yaml", "agent.yml", "oe-config.json"]);
+
 function writeSkillToDisk(safeName, fileMap) {
   const skillDir = path.join(IMPORTS_DIR, safeName);
   for (const [rel, content] of Object.entries(fileMap)) {
+    if (DB_ONLY_FILES.has(rel.toLowerCase())) continue; // DB-only — skip disk write
     const fullPath = path.join(skillDir, rel);
     if (!fullPath.startsWith(skillDir)) continue; // path-traversal guard
     fs.mkdirSync(path.dirname(fullPath), { recursive: true });
     fs.writeFileSync(fullPath, content, "utf8");
   }
+  // Ensure the skill directory itself exists (even if only agent.yaml was in fileMap)
+  fs.mkdirSync(skillDir, { recursive: true });
   return skillDir; // absolute path stored in DB
 }
 
@@ -257,13 +266,12 @@ router.post("/import-skill", async (req, res) => {
         if (fs.existsSync(cfgPath)) { try { oeConfigObj = JSON.parse(fs.readFileSync(cfgPath, "utf8")); } catch {} }
 
         // Auto-generate if missing, then inject LLM config from DB
+        // agent.yaml + oe-config.json are stored ONLY in DB — never written to disk
         const localFileMap = {};
         readLocalDir(absPath, "", localFileMap, 0);
         autoFillMissingFiles(localFileMap, folderName);
         await injectLlmIntoFileMap(req.db, localFileMap);
-        if (localFileMap["agent.yaml"] && !fs.existsSync(yamlPath)) fs.writeFileSync(yamlPath, localFileMap["agent.yaml"], "utf8");
-        // Always write oe-config.json to disk (with injected LLM config)
-        if (localFileMap["oe-config.json"]) fs.writeFileSync(cfgPath, localFileMap["oe-config.json"], "utf8");
+        // Do NOT write agent.yaml or oe-config.json to disk — DB is the source of truth
         try { oeConfigObj = JSON.parse(localFileMap["oe-config.json"]); } catch {}
 
         let doc = {};
@@ -456,16 +464,7 @@ router.put("/:projectId", async (req, res) => {
       include: { agents: { orderBy: { createdAt: "asc" } } },
     });
 
-    // Write oe-config.json to disk for any agent that has a folderPath
-    if (oeConfig !== undefined) {
-      for (const agent of (project.agents || [])) {
-        if (!agent.folderPath) continue;
-        const absPath = resolveSkillPath(agent.folderPath);
-        if (!absPath) continue;
-        try { fs.writeFileSync(path.join(absPath, "oe-config.json"), JSON.stringify(oeConfig, null, 2), "utf8"); } catch {}
-      }
-    }
-
+    // oe-config.json lives only in DB (Project.oeConfig) — do NOT write to disk
     res.json({ project });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -506,13 +505,14 @@ router.get("/:projectId/agents", async (req, res) => {
       where:   { projectId: parseInt(req.params.projectId) },
       orderBy: { createdAt: "asc" },
     });
-    // For disk-based agents, serve live files from disk
+    // DB is the source of truth for agent.yaml (yamlContent).
+    // SKILL.md is a raw source file that lives on disk — attach it as a virtual field.
     for (const agent of agents) {
       if (!agent.folderPath) continue;
       const absPath = resolveSkillPath(agent.folderPath);
       if (!absPath) continue;
-      try { agent.yamlContent  = fs.readFileSync(path.join(absPath, "agent.yaml"), "utf8"); } catch {}
-      try { agent.skillContent = fs.readFileSync(path.join(absPath, "SKILL.md"),   "utf8"); } catch { agent.skillContent = ""; } // virtual — not in DB
+      // agent.yaml → DB only; do NOT override yamlContent from disk
+      try { agent.skillContent = fs.readFileSync(path.join(absPath, "SKILL.md"), "utf8"); } catch { agent.skillContent = ""; }
     }
     res.json({ agents });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -559,13 +559,13 @@ router.put("/:projectId/agents/:agentId", async (req, res) => {
       },
     });
 
-    // Write to disk when folderPath is set
+    // SKILL.md is a raw source file — write it to disk when updated.
+    // agent.yaml lives only in DB (ProjectAgent.yamlContent) — do NOT write to disk.
     if (effectiveFolderPath) {
       const absPath = resolveSkillPath(effectiveFolderPath);
       if (absPath) {
         try {
-          if (yamlContent  !== undefined) fs.writeFileSync(path.join(absPath, "agent.yaml"), yamlContent,  "utf8");
-          if (skillContent !== undefined) fs.writeFileSync(path.join(absPath, "SKILL.md"),   skillContent, "utf8");
+          if (skillContent !== undefined) fs.writeFileSync(path.join(absPath, "SKILL.md"), skillContent, "utf8");
         } catch {}
       }
     }
@@ -611,17 +611,13 @@ router.post("/:projectId/agents/:agentId/run", async (req, res) => {
     let skillContent = "";  // SKILL.md is disk-only, never in DB
     let oeConfigObj = (() => { try { return JSON.parse(project.oeConfig || "{}"); } catch { return {}; } })();
 
+    // DB is the source of truth for agent.yaml (yamlContent) and oe-config (oeConfigObj).
+    // SKILL.md is a raw source file stored on disk — read it from there.
+    // Do NOT override yamlContent or oeConfigObj from disk.
     if (agent.folderPath) {
       const absPath = resolveSkillPath(agent.folderPath);
       if (absPath && fs.existsSync(absPath)) {
-        try { yamlContent  = fs.readFileSync(path.join(absPath, "agent.yaml"),    "utf8"); } catch {}
-        try { skillContent = fs.readFileSync(path.join(absPath, "SKILL.md"),      "utf8"); } catch {}
-        try {
-          const diskCfg = JSON.parse(fs.readFileSync(path.join(absPath, "oe-config.json"), "utf8"));
-          oeConfigObj = diskCfg;
-          const key = diskCfg.llm?.apiKey || "";
-          if (key && !/YOUR_API_KEY|sk-\.\.\.|placeholder/i.test(key)) llmConfig = diskCfg.llm;
-        } catch {}
+        try { skillContent = fs.readFileSync(path.join(absPath, "SKILL.md"), "utf8"); } catch {}
       }
     }
 
@@ -751,6 +747,38 @@ router.get("/:projectId/file", async (req, res) => {
     if (!TEXT_EXTS.has(ext) && ext !== "") return res.json({ content: null, binary: true });
     const content = fs.readFileSync(absFile, "utf8");
     res.json({ content, binary: false });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Write a disk file ─────────────────────────────────────────────────────────
+// Saves any text file within the agent's folder.
+// agent.yaml and oe-config.json are DB-only — writes to those are rejected.
+router.put("/:projectId/file", async (req, res) => {
+  try {
+    const { path: filePath, content } = req.body;
+    if (!filePath || content === undefined) return res.status(400).json({ error: "path and content required" });
+
+    const DB_ONLY = new Set(["agent.yaml", "agent.yml", "oe-config.json"]);
+    if (DB_ONLY.has(path.basename(filePath).toLowerCase())) {
+      return res.status(400).json({ error: `${path.basename(filePath)} is managed by the database — edit it in the agent.yaml panel instead` });
+    }
+
+    const project = await req.db.project.findFirst({
+      where: { id: parseInt(req.params.projectId), workspaceId: parseInt(req.params.workspaceId) },
+      include: { agents: { orderBy: { createdAt: "asc" } } },
+    });
+    if (!project) return res.status(404).json({ error: "Not found" });
+    const agent = project.agents.find(a => a.folderPath) || project.agents[0];
+    if (!agent?.folderPath) return res.status(404).json({ error: "No folder" });
+    const absBase = resolveSkillPath(agent.folderPath);
+    if (!absBase) return res.status(404).json({ error: "Folder not found" });
+
+    const absFile = path.resolve(absBase, filePath);
+    if (!absFile.startsWith(absBase + path.sep) && absFile !== absBase) return res.status(403).json({ error: "Access denied" });
+
+    fs.mkdirSync(path.dirname(absFile), { recursive: true });
+    fs.writeFileSync(absFile, content, "utf8");
+    res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

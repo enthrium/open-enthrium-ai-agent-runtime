@@ -21,26 +21,13 @@ model User {
   chats                Chat[]
   activityLogs         ActivityLog[]
   createdWorkspaces    Workspace[]    @relation("WorkspaceCreator")
-  apiKeys              ApiKey[]       @relation("ApiKeyCreator")
   createdAgents        Agent[]        @relation("AgentCreator")
   triggeredAgentRuns   AgentRun[]     @relation("AgentRunTrigger")
   createdProjects      Project[]      @relation("ProjectCreator")
   triggeredProjectRuns ProjectRun[]   @relation("ProjectRunTrigger")
+  createdThreads       Thread[]       @relation("ThreadCreator")
 }
 
-model ApiKey {
-  id          Int       @id @default(autoincrement())
-  name        String
-  keyHash     String    @unique
-  keyPrefix   String
-  createdById Int?
-  lastUsedAt  DateTime?
-  revoked     Boolean   @default(false)
-  enabled     Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-
-  createdBy User? @relation("ApiKeyCreator", fields: [createdById], references: [id], onDelete: SetNull)
-}
 
 model Setting {
   id        Int      @id @default(autoincrement())
@@ -81,15 +68,17 @@ model Workspace {
 }
 
 model Thread {
-  id          Int      @id @default(autoincrement())
-  uid         String   @unique
-  workspaceId Int
-  name        String   @default("New Thread")
-  pinned      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  uid             String   @unique
+  workspaceId     Int
+  createdByUserId Int?
+  name            String   @default("New Thread")
+  pinned          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?     @relation("ThreadCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   chats     Chat[]
 }
 
@@ -288,6 +277,8 @@ model ProjectRun {
   error             String?
   cancelRequested   Boolean   @default(false)
   triggerType       String    @default("manual")
+  triggeredFrom     String    @default("project")
+  skillName         String?
   startedAt         DateTime  @default(now())
   completedAt       DateTime?
 
@@ -307,4 +298,15 @@ model ConnectionMaster {
   fields      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model McpServer {
+  id              Int      @id @default(autoincrement())
+  name            String
+  url             String
+  apiKey          String?
+  enabled         Boolean  @default(true)
+  isDefault       Boolean  @default(false)
+  connectorConfig String?  // JSON string — only used by the built-in OE MCP server
+  createdAt       DateTime @default(now())
 }

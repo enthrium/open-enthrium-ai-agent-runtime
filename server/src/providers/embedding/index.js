@@ -43,9 +43,29 @@ async function embed(texts) {
     res = await client.embeddings.create({ model, input: texts });
 
   } else if (provider === "gemini") {
+    // New Gemini embedding models (gemini-embedding-001, gemini-embedding-2) use the native
+    // batchEmbedContents API — not the OpenAI-compat endpoint (text-embedding-004 is retired).
     const apiKey = (await getSetting("embedding_api_key")) || process.env.GEMINI_API_KEY;
-    const client = new OpenAI({ apiKey, baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/" });
-    res = await client.embeddings.create({ model: model || "text-embedding-004", input: texts });
+    const embModel = model || "gemini-embedding-001";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${embModel}:batchEmbedContents?key=${apiKey}`;
+    const body = {
+      requests: texts.map(t => ({ model: `models/${embModel}`, content: { parts: [{ text: t }] } })),
+    };
+    const geminiRes = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      throw new Error(`Gemini embedding error ${geminiRes.status}: ${errText}`);
+    }
+    const geminiJson = await geminiRes.json();
+    return {
+      embeddings: (geminiJson.embeddings || []).map(e => e.values),
+      tokensUsed: 0,
+      model: embModel,
+    };
 
   } else if (provider === "cohere") {
     const apiKey = (await getSetting("embedding_api_key")) || process.env.COHERE_API_KEY;

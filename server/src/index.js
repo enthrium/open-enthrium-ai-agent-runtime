@@ -18,9 +18,9 @@ const modelsRoutes    = require("./routes/models");
 const audioRoutes      = require("./routes/audio");
 const dashboardRoutes  = require("./routes/dashboard");
 const embedRoutes      = require("./routes/embed");
-const apiKeyRoutes     = require("./routes/apiKeys");
 const oauthRoutes      = require("./routes/oauth");
 const agentRoutes      = require("./routes/agents");
+const mcpServerRoutes  = require("./routes/mcpServers");
 const projectRoutes    = require("./routes/projects");
 const templateRoutes   = require("./routes/templates");
 const ingestionQueue   = require("./utils/ingestionQueue");
@@ -36,7 +36,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, _res, next) => { req.db = prisma; next(); });
 
 const commercialRoutesPath = path.resolve(__dirname, "../../commercial/routes");
-const isCommercial = fs.existsSync(commercialRoutesPath);
+// isCommercial: folder must exist AND LICENSE_TYPE must not be forced to "community"
+const isCommercial = fs.existsSync(commercialRoutesPath)
+  && (process.env.LICENSE_TYPE || "commercial").toLowerCase() !== "community";
 if (isCommercial) {
   try {
     require(commercialRoutesPath).register(app);
@@ -44,6 +46,8 @@ if (isCommercial) {
   } catch (e) {
     console.log("[Commercial] Failed to load routes:", e.message);
   }
+} else if (fs.existsSync(commercialRoutesPath)) {
+  console.log("[Commercial] Folder present but LICENSE_TYPE=community — running as community");
 }
 
 app.get("/api/instance", async (req, res) => {
@@ -85,13 +89,68 @@ app.use("/api/models",     modelsRoutes);
 app.use("/api/audio",      audioRoutes);
 app.use("/api/dashboard",  dashboardRoutes);
 app.use("/api/embed",          embedRoutes);
-app.use("/api/admin/api-keys",  apiKeyRoutes);
 app.use("/api/oauth",          oauthRoutes);
 app.use("/api/admin",          agentRoutes);
 app.use("/api/admin/workspaces/:workspaceId/projects", projectRoutes);
-app.use("/api/admin/templates", templateRoutes);
+app.use("/api/admin/templates",   templateRoutes);
+app.use("/api/admin/mcp-servers", mcpServerRoutes);
 
 app.get("/api/health", (_req, res) => res.json({ status: "ok", version }));
+
+// MCP status — any authenticated user can read this
+app.get("/api/mcp-status", async (req, res) => {
+  try {
+    const http = require("http");
+    const mcpPort = parseInt(process.env.MCP_PORT) || 3003;
+
+    // Get all enabled MCP servers from DB
+    const servers = await prisma.mcpServer.findMany({ where: { enabled: true }, orderBy: { id: "asc" } });
+    const defaultSrv = servers.find(s => s.isDefault);
+
+    // Only probe the MCP process if the built-in server is enabled in DB
+    // (process keeps running even when disabled — don't report it as "connected")
+    let onlineTools = 0;
+    let online = false;
+    if (defaultSrv) {
+      try {
+        const health = await new Promise((resolve, reject) => {
+          const r = http.get(`http://127.0.0.1:${mcpPort}/health`, resp => {
+            let d = ""; resp.on("data", c => d += c);
+            resp.on("end", () => { try { resolve(JSON.parse(d)); } catch { resolve(null); } });
+          });
+          r.on("error", reject);
+          r.setTimeout(2000, () => { r.destroy(); reject(new Error("timeout")); });
+          r.end();
+        });
+        if (health?.status === "ok") { online = true; onlineTools = health.tools || 0; }
+      } catch {}
+    }
+    let connectors = [];
+    if (defaultSrv?.connectorConfig) {
+      try {
+        const cfg = JSON.parse(defaultSrv.connectorConfig);
+        connectors = (cfg.connectors || []).map((c, i) => ({
+          name: c.name, type: c.type, toolPrefix: `conn_${i + 1}_`,
+        }));
+      } catch {}
+    }
+
+    // External servers (non-default, enabled)
+    const externalServers = servers.filter(s => !s.isDefault).map(s => ({
+      name: s.name, url: s.url,
+    }));
+
+    res.json({
+      online,
+      tools: onlineTools,
+      connectors,
+      externalServers,
+      serverCount: servers.length,
+    });
+  } catch {
+    res.json({ online: false, tools: 0, connectors: [], externalServers: [], serverCount: 0 });
+  }
+});
 
 // Feature flags — readable by any authenticated user
 app.get("/api/features", async (req, res) => {
@@ -152,14 +211,34 @@ if (process.env.NODE_ENV === "production") {
 app.listen(PORT, async () => {
   console.log(`Open Enthrium server running on port ${PORT}`);
   await recoverPendingJobs();
+  await seedDefaultMcpServer();
   await startMcpServer();
 });
 
+async function seedDefaultMcpServer() {
+  try {
+    const existing = await prisma.mcpServer.findFirst({ where: { isDefault: true } });
+    if (!existing) {
+      const mcpPort = parseInt(process.env.MCP_PORT) || 3003;
+      await prisma.mcpServer.create({
+        data: {
+          name:      "Open Enthrium MCP",
+          url:       `http://127.0.0.1:${mcpPort}`,
+          isDefault: true,
+          enabled:   true,
+        },
+      });
+      console.log("[MCP] Default MCP server entry created in DB");
+    }
+  } catch (e) {
+    console.warn("[MCP] Could not seed default MCP server:", e.message);
+  }
+}
+
 // ── Auto-start MCP server ────────────────────────────────────────────────────
 async function startMcpServer() {
-  const mcpScript     = path.resolve(__dirname, "../mcp/index.js");
-  const mcpConfigFile = process.env.MCP_CONNECTOR_JSON || "";
-  const mcpPort       = parseInt(process.env.MCP_PORT) || 3003;
+  const mcpScript = path.resolve(__dirname, "../mcp/index.js");
+  const mcpPort   = parseInt(process.env.MCP_PORT) || 3003;
 
   if (!fs.existsSync(mcpScript)) {
     console.log("[MCP] mcp/index.js not found — skipping auto-start");
@@ -184,24 +263,47 @@ async function startMcpServer() {
     console.warn("[MCP] Could not read LLM config from DB:", e.message);
   }
 
-  // Helper — push LLM config to a running MCP via POST /config
-  function pushLlmConfig() {
-    if (!llmEnv.OE_LLM_PROVIDER && !llmEnv.OE_LLM_API_KEY) return;
-    const body = JSON.stringify({
-      llm: {
+  // Read connector config for the built-in MCP server from DB
+  let connectorConfig = null;
+  try {
+    const defaultSrv = await prisma.mcpServer.findFirst({ where: { isDefault: true } });
+    if (defaultSrv?.connectorConfig) {
+      connectorConfig = JSON.parse(defaultSrv.connectorConfig);
+    }
+  } catch (e) {
+    console.warn("[MCP] Could not read connector config from DB:", e.message);
+  }
+
+  // Helper — push LLM + connector config to a running MCP via POST /config
+  function pushConfig() {
+    const payload = {};
+    if (llmEnv.OE_LLM_PROVIDER || llmEnv.OE_LLM_API_KEY) {
+      payload.llm = {
         provider:         llmEnv.OE_LLM_PROVIDER,
         apiKey:           llmEnv.OE_LLM_API_KEY,
         model:            llmEnv.OE_LLM_MODEL,
         baseURL:          llmEnv.OE_LLM_BASE_URL          || undefined,
         azureEndpoint:    llmEnv.OE_LLM_AZURE_ENDPOINT    || undefined,
         azureDeployment:  llmEnv.OE_LLM_AZURE_DEPLOYMENT  || undefined,
-      },
-    });
+      };
+    }
+    if (connectorConfig) payload.connectors = connectorConfig.connectors || connectorConfig;
+    if (!Object.keys(payload).length) return;
+    const connCount = Array.isArray(payload.connectors) ? payload.connectors.length : 0;
+    console.log(`[MCP] Pushing config to MCP → ${connCount} connector(s)`);
+    const body = JSON.stringify(payload);
     const req = http.request({
       hostname: "127.0.0.1", port: mcpPort, path: "/config", method: "POST",
       headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
-    }, () => {});
-    req.on("error", () => {}); // silent — old MCP may not have /config
+    }, (res) => {
+      let d = "";
+      res.on("data", c => d += c);
+      res.on("end", () => {
+        try { const r = JSON.parse(d); if (!r.ok) console.warn("[MCP] Config push returned not-ok:", d); }
+        catch {}
+      });
+    });
+    req.on("error", (e) => console.warn(`[MCP] Config push failed: ${e.message}`));
     req.write(body);
     req.end();
   }
@@ -219,14 +321,14 @@ async function startMcpServer() {
         console.log(`[MCP] Already running → http://localhost:${mcpPort}`);
       }
       // Push LLM config to the running MCP so it uses the platform's provider
-      pushLlmConfig();
+      pushConfig();
     });
   });
 
   check.on("error", () => {
     // Not running — spawn it
     const { spawn } = require("child_process");
-    const args = mcpConfigFile && fs.existsSync(mcpConfigFile) ? [mcpScript, mcpConfigFile] : [mcpScript];
+    const args = [mcpScript];
     const mcpProc = spawn(process.execPath, args, {
       stdio: ["ignore", "pipe", "pipe"],
       env:   { ...process.env, ...llmEnv },
@@ -237,8 +339,8 @@ async function startMcpServer() {
     mcpProc.on("exit", code => console.log(`[MCP] Server exited with code ${code}`));
 
     console.log(`[MCP] Server starting → http://localhost:${mcpPort}`);
-    // Give it 3s to start then push LLM config
-    setTimeout(pushLlmConfig, 3000);
+    // Give it 3s to start then push LLM + connector config
+    setTimeout(pushConfig, 3000);
   });
 
   check.setTimeout(2000, () => { check.destroy(); });
