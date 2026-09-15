@@ -12,6 +12,7 @@
 [![macOS](https://img.shields.io/badge/macOS-Download-000000?logo=apple&logoColor=white)](https://github.com/enthrium/open-enthrium-ai-agent-runtime/releases/latest/download/oe-runtime-macos)
 [![npm](https://img.shields.io/npm/v/@openenthrium/oe-runtime?color=4f46e5&label=npm)](https://www.npmjs.com/package/@openenthrium/oe-runtime)
 [![Website](https://img.shields.io/badge/Website-openenthrium.com-4f46e5)](https://www.openenthrium.com)
+[![Open Enthrium on StartupScores](https://startupscores.com/badge/open-enthrium.svg?style=shield&v=combo&theme=dark)](https://startupscores.com/open-source/open-enthrium)
 
 </div>
 
